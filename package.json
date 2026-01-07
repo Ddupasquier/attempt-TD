@@ -1,0 +1,16 @@
+{
+  "name": "attempt-td",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && sass src/style.scss style.css",
+    "watch": "tsc --watch & sass --watch src/style.scss:style.css",
+    "clean": "rm -f main.js main.js.map style.css",
+    "postinstall": "npm run build"
+  },
+  "devDependencies": {
+    "sass": "^1.77.0",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fantasy TD - Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="title">Fantasy TD (Prototype)</div>
+        <div class="stats" id="stats"></div>
+      </header>
+      <main>
+        <div class="hud">
+          <div class="hud-section">
+            <div class="label">Tower</div>
+            <div class="tower-list" id="towerList"></div>
+          </div>
+          <div class="hud-section">
+            <div class="label">Actions</div>
+            <button id="startWave">Start Wave</button>
+            <button id="resetGame">Reset</button>
+            <button id="toggleSound">Sound: On</button>
+            <div class="hint">Tap a tile to place a tower.</div>
+          </div>
+          <div class="hud-section">
+            <div class="label">Factions</div>
+            <div class="factions" id="factionLabel">Humans vs Elves</div>
+          </div>
+        </div>
+        <canvas id="game"></canvas>
+      </main>
+    </div>
+    <div class="modal" id="defeatModal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="defeatTitle">
+        <h2 id="defeatTitle">Defeat</h2>
+        <p>Your defenses fell. Want to try again?</p>
+        <button id="defeatReset">Reset Game</button>
+      </div>
+    </div>
+    <script src="main.js"></script>
+  </body>
+</html>

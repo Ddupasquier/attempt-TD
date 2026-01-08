@@ -1,4 +1,4 @@
-export function buildPathTiles(pathPoints: Array<{ x: number; y: number }>) {
+const buildPathTiles = (pathPoints: Array<{ x: number; y: number }>) => {
   const pathTiles = new Set<string>();
 
   for (let i = 0; i < pathPoints.length - 1; i += 1) {
@@ -17,4 +17,6 @@ export function buildPathTiles(pathPoints: Array<{ x: number; y: number }>) {
   }
 
   return pathTiles;
-}
+};
+
+export { buildPathTiles };

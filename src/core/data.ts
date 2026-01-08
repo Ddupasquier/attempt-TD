@@ -1,8 +1,8 @@
 import type { FactionConfig, FactionId, Grid, PixelSprite, TowerType } from "./types";
 
-export const grid: Grid = { cols: 16, rows: 9 };
+const grid: Grid = { cols: 16, rows: 9 };
 
-export const towerTypes: TowerType[] = [
+const towerTypes: TowerType[] = [
   {
     id: "mage",
     name: "Arcane Tower",
@@ -35,7 +35,7 @@ export const towerTypes: TowerType[] = [
   },
 ];
 
-export const pathPoints = [
+const pathPoints = [
   { x: 0, y: 4 },
   { x: 4, y: 4 },
   { x: 4, y: 2 },
@@ -45,7 +45,7 @@ export const pathPoints = [
   { x: 15, y: 7 },
 ];
 
-export const enemySprites: Record<FactionId, PixelSprite> = {
+const enemySprites: Record<FactionId, PixelSprite> = {
   humans: {
     pixels: [
       "..ss....",
@@ -184,7 +184,7 @@ export const enemySprites: Record<FactionId, PixelSprite> = {
   },
 };
 
-export const towerSprites: Record<string, PixelSprite> = {
+const towerSprites: Record<string, PixelSprite> = {
   mage: {
     pixels: [
       "..nn....",
@@ -240,7 +240,7 @@ export const towerSprites: Record<string, PixelSprite> = {
   },
 };
 
-export const factionProgression: FactionConfig[] = [
+const factionProgression: FactionConfig[] = [
   { id: "humans", name: "Human Vanguard", start: 1, end: 10 },
   { id: "orcs", name: "Orc Marauders", start: 11, end: 20 },
   { id: "elves", name: "Elven Raiders", start: 21, end: 30 },
@@ -251,9 +251,8 @@ export const factionProgression: FactionConfig[] = [
   { id: "dragons", name: "Dragonkin", start: 71, end: 9999 },
 ];
 
-export function getFactionForWave(waveNumber: number) {
-  return (
-    factionProgression.find((faction) => waveNumber >= faction.start && waveNumber <= faction.end) ??
-    factionProgression[factionProgression.length - 1]
-  );
-}
+const getFactionForWave = (waveNumber: number) =>
+  factionProgression.find((faction) => waveNumber >= faction.start && waveNumber <= faction.end) ??
+  factionProgression[factionProgression.length - 1];
+
+export { enemySprites, factionProgression, getFactionForWave, grid, pathPoints, towerSprites, towerTypes };

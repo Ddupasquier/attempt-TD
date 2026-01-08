@@ -5,7 +5,7 @@ type ToneConfig = {
   gain: number;
 };
 
-export function createAudioSystem() {
+const createAudioSystem = () => {
   let audioCtx: AudioContext | null = null;
 
   const tonePresets: Record<string, Omit<ToneConfig, "duration">> = {
@@ -14,7 +14,7 @@ export function createAudioSystem() {
     blade: { freq: 360, type: "square", gain: 0.07 },
   };
 
-  function ensureAudioContext() {
+  const ensureAudioContext = () => {
     if (!audioCtx) {
       const WebkitAudioContext = (window as Window & { webkitAudioContext?: typeof AudioContext })
         .webkitAudioContext;
@@ -23,9 +23,9 @@ export function createAudioSystem() {
     if (audioCtx && audioCtx.state === "suspended") {
       audioCtx.resume();
     }
-  }
+  };
 
-  function playTone({ freq, duration, type, gain }: ToneConfig) {
+  const playTone = ({ freq, duration, type, gain }: ToneConfig) => {
     if (!audioCtx) return;
     const oscillator = audioCtx.createOscillator();
     const volume = audioCtx.createGain();
@@ -37,20 +37,22 @@ export function createAudioSystem() {
     oscillator.start();
     volume.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
     oscillator.stop(audioCtx.currentTime + duration);
-  }
+  };
 
-  function unlock() {
+  const unlock = () => {
     ensureAudioContext();
-  }
+  };
 
-  function playDamageSound(towerTypeId: string, soundEnabled: boolean) {
+  const playDamageSound = (towerTypeId: string, soundEnabled: boolean) => {
     if (!soundEnabled) return;
     ensureAudioContext();
     if (!audioCtx) return;
     const tone = tonePresets[towerTypeId];
     if (!tone) return;
     playTone({ ...tone, duration: 0.08 });
-  }
+  };
 
   return { unlock, playDamageSound };
-}
+};
+
+export { createAudioSystem };

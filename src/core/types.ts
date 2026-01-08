@@ -1,4 +1,4 @@
-export type TowerType = {
+type TowerType = {
   id: string;
   name: string;
   cost: number;
@@ -9,7 +9,7 @@ export type TowerType = {
   description: string;
 };
 
-export type Tower = {
+type Tower = {
   id: string;
   col: number;
   row: number;
@@ -17,7 +17,7 @@ export type Tower = {
   cooldown: number;
 };
 
-export type FactionId =
+type FactionId =
   | "humans"
   | "orcs"
   | "elves"
@@ -27,7 +27,7 @@ export type FactionId =
   | "demons"
   | "dragons";
 
-export type Enemy = {
+type Enemy = {
   id: string;
   hp: number;
   maxHp: number;
@@ -42,7 +42,7 @@ export type Enemy = {
   reachedEnd?: boolean;
 };
 
-export type WaveState = {
+type WaveState = {
   id: string;
   waveNumber: number;
   spawnTimer: number;
@@ -51,7 +51,7 @@ export type WaveState = {
   remainingEnemies: number;
 };
 
-export type Projectile = {
+type Projectile = {
   x: number;
   y: number;
   target: Enemy;
@@ -64,19 +64,19 @@ export type Projectile = {
   maxRange: number;
 };
 
-export type FactionConfig = {
+type FactionConfig = {
   id: FactionId;
   name: string;
   start: number;
   end: number;
 };
 
-export type Grid = {
+type Grid = {
   cols: number;
   rows: number;
 };
 
-export type GameState = {
+type GameState = {
   gold: number;
   lives: number;
   wave: number;
@@ -91,7 +91,7 @@ export type GameState = {
   soundEnabled: boolean;
 };
 
-export type SaveData = {
+type SaveData = {
   gold: number;
   lives: number;
   wave: number;
@@ -100,7 +100,21 @@ export type SaveData = {
   towers: Array<{ col: number; row: number; typeId: string }>;
 };
 
-export type PixelSprite = {
+type PixelSprite = {
   pixels: string[];
   colors: Record<string, string>;
+};
+
+export type {
+  Enemy,
+  FactionConfig,
+  FactionId,
+  GameState,
+  Grid,
+  PixelSprite,
+  Projectile,
+  SaveData,
+  Tower,
+  TowerType,
+  WaveState,
 };

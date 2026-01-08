@@ -2,7 +2,7 @@ import type { GameState, SaveData } from "./types";
 
 const STORAGE_KEY = "fantasy-td-save";
 
-export function saveGame(state: GameState) {
+const saveGame = (state: GameState) => {
   const data: SaveData = {
     gold: state.gold,
     lives: state.lives,
@@ -16,9 +16,9 @@ export function saveGame(state: GameState) {
     })),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
+};
 
-export function loadGame(): SaveData | null {
+const loadGame = (): SaveData | null => {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
   try {
@@ -27,4 +27,6 @@ export function loadGame(): SaveData | null {
     console.warn("Failed to load save", error);
     return null;
   }
-}
+};
+
+export { loadGame, saveGame };

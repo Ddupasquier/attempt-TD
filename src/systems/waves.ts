@@ -1,6 +1,6 @@
 import type { GameState, WaveState } from "../core/types";
 
-export function startNewWave(state: GameState) {
+const startNewWave = (state: GameState) => {
   const waveNumber = state.wave;
   const wave: WaveState = {
     id: crypto.randomUUID(),
@@ -13,23 +13,23 @@ export function startNewWave(state: GameState) {
   state.waves.push(wave);
   state.wave += 1;
   return wave;
-}
+};
 
-export function updateCountdown(state: GameState, dt: number) {
+const updateCountdown = (state: GameState, dt: number) => {
   if (!state.isCountingDown) return;
   state.countdownRemaining -= dt;
   if (state.countdownRemaining <= 0) {
     state.isCountingDown = false;
     state.countdownRemaining = 0;
   }
-}
+};
 
-export function updateWaves(
+const updateWaves = (
   state: GameState,
   dt: number,
   spawnEnemy: (wave: WaveState) => void,
   onWaveComplete: () => void,
-) {
+) => {
   for (let i = state.waves.length - 1; i >= 0; i -= 1) {
     const wave = state.waves[i];
     wave.spawnTimer -= dt;
@@ -44,4 +44,6 @@ export function updateWaves(
       onWaveComplete();
     }
   }
-}
+};
+
+export { startNewWave, updateCountdown, updateWaves };

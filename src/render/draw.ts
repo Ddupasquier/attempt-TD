@@ -1,13 +1,13 @@
 import type { Enemy, PixelSprite, Projectile, Tower } from "../core/types";
 import { tileCenter } from "../core/geometry";
 
-function drawPixelSprite(
+const drawPixelSprite = (
   ctx: CanvasRenderingContext2D,
   centerX: number,
   centerY: number,
   sprite: PixelSprite,
   pixelSize: number,
-) {
+) => {
   const height = sprite.pixels.length;
   const width = sprite.pixels[0]?.length ?? 0;
   const startX = centerX - (width * pixelSize) / 2;
@@ -24,9 +24,9 @@ function drawPixelSprite(
       ctx.fillRect(startX + col * pixelSize, startY + row * pixelSize, pixelSize, pixelSize);
     }
   }
-}
+};
 
-export function drawGrid(ctx: CanvasRenderingContext2D, size: number, cols: number, rows: number) {
+const drawGrid = (ctx: CanvasRenderingContext2D, size: number, cols: number, rows: number) => {
   ctx.strokeStyle = "rgba(255, 255, 255, 0.07)";
   for (let c = 0; c <= cols; c += 1) {
     ctx.beginPath();
@@ -40,26 +40,26 @@ export function drawGrid(ctx: CanvasRenderingContext2D, size: number, cols: numb
     ctx.lineTo(cols * size, r * size);
     ctx.stroke();
   }
-}
+};
 
-export function drawPath(
+const drawPath = (
   ctx: CanvasRenderingContext2D,
   size: number,
   pathTiles: Set<string>,
-) {
+) => {
   ctx.fillStyle = "rgba(126, 94, 74, 0.85)";
   for (const tile of pathTiles) {
     const [col, row] = tile.split(",").map(Number);
     ctx.fillRect(col * size, row * size, size, size);
   }
-}
+};
 
-export function drawTowers(
+const drawTowers = (
   ctx: CanvasRenderingContext2D,
   size: number,
   towers: Tower[],
   towerSprites: Record<string, PixelSprite>,
-) {
+) => {
   for (const tower of towers) {
     const center = tileCenter(tower.col, tower.row, size);
     const sprite = towerSprites[tower.type.id];
@@ -78,14 +78,14 @@ export function drawTowers(
     ctx.arc(center.x, center.y, tower.type.range * size, 0, Math.PI * 2);
     ctx.stroke();
   }
-}
+};
 
-export function drawEnemies(
+const drawEnemies = (
   ctx: CanvasRenderingContext2D,
   size: number,
   enemies: Enemy[],
   enemySprites: Record<string, PixelSprite>,
-) {
+) => {
   for (const enemy of enemies) {
     if (enemy.x === undefined || enemy.y === undefined) continue;
     const sprite = enemySprites[enemy.faction] ?? enemySprites.orcs;
@@ -100,17 +100,17 @@ export function drawEnemies(
     ctx.fillStyle = "#89d185";
     ctx.fillRect(hpX, hpY, (hpWidth * Math.max(enemy.hp, 0)) / enemy.maxHp, hpHeight);
   }
-}
+};
 
-export function drawProjectiles(ctx: CanvasRenderingContext2D, projectiles: Projectile[]) {
+const drawProjectiles = (ctx: CanvasRenderingContext2D, projectiles: Projectile[]) => {
   for (const bolt of projectiles) {
     const pixelSize = 3;
     ctx.fillStyle = bolt.color;
     ctx.fillRect(bolt.x - pixelSize / 2, bolt.y - pixelSize / 2, pixelSize, pixelSize);
   }
-}
+};
 
-export function drawFrame(
+const drawFrame = (
   ctx: CanvasRenderingContext2D,
   size: number,
   pathTiles: Set<string>,
@@ -121,7 +121,7 @@ export function drawFrame(
   enemySprites: Record<string, PixelSprite>,
   cols: number,
   rows: number,
-) {
+) => {
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, ctx.canvas.clientWidth, ctx.canvas.clientHeight);
   ctx.fillStyle = "#1f1a18";
@@ -132,4 +132,6 @@ export function drawFrame(
   drawTowers(ctx, size, towers, towerSprites);
   drawEnemies(ctx, size, enemies, enemySprites);
   drawProjectiles(ctx, projectiles);
-}
+};
+
+export { drawEnemies, drawFrame, drawGrid, drawPath, drawProjectiles, drawTowers };

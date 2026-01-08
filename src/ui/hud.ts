@@ -1,6 +1,6 @@
 import type { GameState, TowerType } from "../core/types";
 
-export type HudElements = {
+type HudElements = {
   statsEl: HTMLDivElement;
   towerListEl: HTMLDivElement;
   startWaveBtn: HTMLButtonElement;
@@ -11,19 +11,19 @@ export type HudElements = {
   factionLabel: HTMLDivElement;
 };
 
-export function updateStats(statsEl: HTMLDivElement, state: GameState) {
+const updateStats = (statsEl: HTMLDivElement, state: GameState) => {
   statsEl.innerHTML = `Gold: ${state.gold} | Lives: ${state.lives} | Wave: ${state.wave}`;
-}
+};
 
-export function updateSoundButton(toggleSoundBtn: HTMLButtonElement, soundEnabled: boolean) {
+const updateSoundButton = (toggleSoundBtn: HTMLButtonElement, soundEnabled: boolean) => {
   toggleSoundBtn.textContent = `Sound: ${soundEnabled ? "On" : "Off"}`;
-}
+};
 
-export function updateWaveButton(
+const updateWaveButton = (
   startWaveBtn: HTMLButtonElement,
   isCountingDown: boolean,
   countdownRemaining: number,
-) {
+) => {
   if (isCountingDown) {
     startWaveBtn.disabled = true;
     const seconds = Math.ceil(countdownRemaining);
@@ -32,27 +32,27 @@ export function updateWaveButton(
     startWaveBtn.disabled = false;
     startWaveBtn.textContent = "Start Wave";
   }
-}
+};
 
-export function updateFactionLabel(factionLabel: HTMLDivElement, factionName: string) {
+const updateFactionLabel = (factionLabel: HTMLDivElement, factionName: string) => {
   factionLabel.textContent = `Enemy Faction: ${factionName}`;
-}
+};
 
-export function showDefeatModal(defeatModal: HTMLDivElement) {
+const showDefeatModal = (defeatModal: HTMLDivElement) => {
   defeatModal.classList.add("open");
   defeatModal.setAttribute("aria-hidden", "false");
-}
+};
 
-export function hideDefeatModal(defeatModal: HTMLDivElement) {
+const hideDefeatModal = (defeatModal: HTMLDivElement) => {
   defeatModal.classList.remove("open");
   defeatModal.setAttribute("aria-hidden", "true");
-}
+};
 
-export function buildTowerList(
+const buildTowerList = (
   towerListEl: HTMLDivElement,
   towerTypes: TowerType[],
   onSelect: (towerTypeId: string) => void,
-) {
+) => {
   towerListEl.innerHTML = "";
   for (const tower of towerTypes) {
     const card = document.createElement("div");
@@ -65,10 +65,22 @@ export function buildTowerList(
     card.addEventListener("click", () => onSelect(tower.id));
     towerListEl.appendChild(card);
   }
-}
+};
 
-export function setSelectedTowerCard(towerListEl: HTMLDivElement, towerId: string) {
+const setSelectedTowerCard = (towerListEl: HTMLDivElement, towerId: string) => {
   for (const card of towerListEl.querySelectorAll<HTMLDivElement>(".tower-card")) {
     card.classList.toggle("active", card.dataset.towerId === towerId);
   }
-}
+};
+
+export type { HudElements };
+export {
+  buildTowerList,
+  hideDefeatModal,
+  setSelectedTowerCard,
+  showDefeatModal,
+  updateFactionLabel,
+  updateSoundButton,
+  updateStats,
+  updateWaveButton,
+};

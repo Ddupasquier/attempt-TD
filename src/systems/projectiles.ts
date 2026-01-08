@@ -1,10 +1,10 @@
 import type { GameState } from "../core/types";
 
-export function updateProjectiles(
+const updateProjectiles = (
   state: GameState,
   dt: number,
   playDamageSound: (towerTypeId: string) => void,
-) {
+) => {
   for (let i = state.projectiles.length - 1; i >= 0; i -= 1) {
     const bolt = state.projectiles[i];
     if (!bolt.target || bolt.target.hp <= 0) {
@@ -34,4 +34,6 @@ export function updateProjectiles(
     bolt.x += (dx / dist) * step;
     bolt.y += (dy / dist) * step;
   }
-}
+};
+
+export { updateProjectiles };

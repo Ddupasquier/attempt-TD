@@ -1,7 +1,7 @@
 import type { GameState } from "../core/types";
 import { tileCenter } from "../core/geometry";
 
-export function updateTowers(state: GameState, dt: number, size: number) {
+const updateTowers = (state: GameState, dt: number, size: number) => {
   for (const tower of state.towers) {
     tower.cooldown -= dt;
     if (tower.cooldown > 0) continue;
@@ -37,4 +37,6 @@ export function updateTowers(state: GameState, dt: number, size: number) {
       maxRange,
     });
   }
-}
+};
+
+export { updateTowers };

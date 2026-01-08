@@ -13,3 +13,6 @@ Build:
 
 Preview build:
 - `npm run preview`
+
+Lint:
+- `npm run lint`

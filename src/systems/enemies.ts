@@ -1,7 +1,7 @@
-import type { Enemy, GameState, WaveState } from "../core/types";
+import type { GameState, WaveState } from "../core/types";
 import { getFactionForWave, pathPoints } from "../core/data";
 
-export function spawnEnemy(state: GameState, wave: WaveState) {
+const spawnEnemy = (state: GameState, wave: WaveState) => {
   const hp = 32 + wave.waveNumber * 6;
   const speed = 0.6 + wave.waveNumber * 0.03;
   const faction = getFactionForWave(wave.waveNumber);
@@ -15,24 +15,24 @@ export function spawnEnemy(state: GameState, wave: WaveState) {
     targetIndex: 1,
   });
   wave.remainingEnemies += 1;
-}
+};
 
-export function updateEnemies(
+const updateEnemies = (
   state: GameState,
   dt: number,
   size: number,
   onStateChange: () => void,
-) {
+) => {
   const turnStrength = 10;
 
-  const waypoint = (index: number) => ({
+  const getWaypoint = (index: number) => ({
     x: pathPoints[index].x * size + size * 0.5,
     y: pathPoints[index].y * size + size * 0.5,
   });
 
   for (const enemy of state.enemies) {
     if (enemy.x === undefined || enemy.y === undefined) {
-      const start = waypoint(0);
+      const start = getWaypoint(0);
       enemy.x = start.x;
       enemy.y = start.y;
       enemy.vx = 1;
@@ -43,7 +43,7 @@ export function updateEnemies(
       enemy.reachedEnd = true;
       continue;
     }
-    const target = waypoint(enemy.targetIndex);
+    const target = getWaypoint(enemy.targetIndex);
     const dx = target.x - enemy.x;
     const dy = target.y - enemy.y;
     const dist = Math.hypot(dx, dy);
@@ -79,4 +79,6 @@ export function updateEnemies(
       onStateChange();
     }
   }
-}
+};
+
+export { spawnEnemy, updateEnemies };

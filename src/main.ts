@@ -1,43 +1,33 @@
 import "./style.scss";
 import { createAudioSystem } from "./core/audio";
 import { assertTowerRanges, enemySprites, getFactionForWave, grid, pathPoints, towerSprites, towerTypes } from "./core/data";
-import { requireElement, getCanvasContext } from "./core/dom";
 import { getTileSize, screenToGrid } from "./core/geometry";
 import { buildPathTiles } from "./core/path";
 import { createInitialState } from "./core/state";
 import { loadGame, saveGame } from "./core/storage";
 import { BOW_TREE_RANGE_BONUS, isTreeTile } from "./core/terrain";
 import type { GameState, TowerType } from "./core/types";
-import { drawFrame } from "./render/draw";
+import { createPixiRenderer } from "./render/pixiRenderer";
 import { spawnEnemy, updateEnemies } from "./systems/enemies";
 import { updateProjectiles } from "./systems/projectiles";
 import { updateTowers } from "./systems/towers";
 import { startNewWave, updateCountdown, updateWaves } from "./systems/waves";
-import {
-  buildTowerList,
-  hideDefeatModal,
-  setSelectedTowerCard,
-  showDefeatModal,
-  updateFactionLabel,
-  updateSoundButton,
-  updateStats,
-  updateWaveButton,
-} from "./ui/hud";
+import UiRoot from "./ui/UiRoot.svelte";
+import { UI_TEXT } from "./ui/text";
+import { createUiState } from "./ui/uiState";
+import { mount } from "svelte";
 
-const canvas = requireElement<HTMLCanvasElement>("game");
-const ctx = getCanvasContext(canvas);
-
-const statsEl = requireElement<HTMLDivElement>("stats");
-const towerListEl = requireElement<HTMLDivElement>("towerList");
-const startWaveBtn = requireElement<HTMLButtonElement>("startWave");
-const resetBtn = requireElement<HTMLButtonElement>("resetGame");
-const toggleSoundBtn = requireElement<HTMLButtonElement>("toggleSound");
-const defeatModal = requireElement<HTMLDivElement>("defeatModal");
-const defeatReset = requireElement<HTMLButtonElement>("defeatReset");
-const factionLabel = requireElement<HTMLDivElement>("factionLabel");
+const canvas = document.getElementById("game") as HTMLCanvasElement;
+const uiRoot = document.getElementById("ui-root");
+if (!canvas || !uiRoot) {
+  throw new Error("Required UI root elements missing");
+}
+document.title = UI_TEXT.pageTitle;
+const mainLayout = document.querySelector<HTMLElement>(".game-stage");
 
 const pathTiles = buildPathTiles(pathPoints);
 const audio = createAudioSystem();
+let renderer: Awaited<ReturnType<typeof createPixiRenderer>> | null = null;
 
 let gameState: GameState = createInitialState();
 let lastTime = 0;
@@ -60,11 +50,23 @@ const markStateDirty = () => {
 };
 
 const resizeCanvas = () => {
-  const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (!renderer) return;
+  const frame = canvas.parentElement;
+  const mainWidth = mainLayout?.getBoundingClientRect().width ?? frame?.clientWidth ?? canvas.clientWidth;
+  const mainHeight = mainLayout?.getBoundingClientRect().height ?? frame?.clientHeight ?? canvas.clientHeight;
+  const sizeFromWidth = mainWidth > 0 ? mainWidth / grid.cols : getTileSize(canvas, grid);
+  const sizeFromHeight = mainHeight > 0 ? mainHeight / grid.rows : sizeFromWidth;
+  const size = Math.min(sizeFromWidth, sizeFromHeight);
+  const mapWidth = size * grid.cols;
+  const mapHeight = size * grid.rows;
+  canvas.style.width = `${mapWidth}px`;
+  canvas.style.height = `${mapHeight}px`;
+  if (frame) {
+    frame.style.width = `${mapWidth}px`;
+    frame.style.height = `${mapHeight}px`;
+  }
+  renderer.resizeToCanvas();
+  renderer.rebuildTerrain(size, grid.cols, grid.rows);
 };
 
 assertTowerRanges();
@@ -89,11 +91,8 @@ const addTower = (col: number, row: number, type: TowerType, rangeBonus: number)
   return tower;
 };
 
-const setSelectedTower = (id: string) => {
-  gameState.selectedTower = towerTypes.find((tower) => tower.id === id) || null;
-  if (gameState.selectedTower) {
-    setSelectedTowerCard(towerListEl, id);
-  }
+const setSelectedTower = (id: string | null) => {
+  gameState.selectedTower = id ? towerTypes.find((tower) => tower.id === id) || null : null;
   markStateDirty();
 };
 
@@ -101,6 +100,7 @@ const startTowerDrag = (towerTypeId: string) => {
   dragTowerTypeId = towerTypeId;
   isDragging = true;
   setSelectedTower(towerTypeId);
+  updateUI();
 };
 
 const updateDragPointer = (event: PointerEvent) => {
@@ -112,13 +112,37 @@ const stopTowerDrag = () => {
   dragTowerTypeId = null;
   dragPointer = null;
   isDragging = false;
+  updateUI();
 };
 
+const uiState = createUiState({
+  selectedTowerTypeId: gameState.selectedTower?.id ?? null,
+  gold: gameState.gold,
+  lives: gameState.lives,
+  wave: gameState.wave,
+  enemyFactionName: getFactionForWave(gameState.wave).name,
+  soundEnabled: gameState.soundEnabled,
+  isCountingDown: gameState.isCountingDown,
+  countdownRemaining: gameState.countdownRemaining,
+  showDefeat: false,
+  isDragging: false,
+});
+let ui: ReturnType<typeof mount> | null = null;
+
 const updateUI = () => {
-  updateStats(statsEl, gameState);
-  updateSoundButton(toggleSoundBtn, gameState.soundEnabled);
-  updateWaveButton(startWaveBtn, gameState.isCountingDown, gameState.countdownRemaining);
-  updateFactionLabel(factionLabel, getFactionForWave(gameState.wave).name);
+  if (!ui) return;
+  uiState.set({
+    selectedTowerTypeId: gameState.selectedTower?.id ?? null,
+    gold: gameState.gold,
+    lives: gameState.lives,
+    wave: gameState.wave,
+    enemyFactionName: getFactionForWave(gameState.wave).name,
+    soundEnabled: gameState.soundEnabled,
+    isCountingDown: gameState.isCountingDown,
+    countdownRemaining: gameState.countdownRemaining,
+    showDefeat: isDefeated,
+    isDragging,
+  });
 };
 
 const resetGame = () => {
@@ -127,7 +151,6 @@ const resetGame = () => {
   selectedTowerId = null;
   recentTowerId = null;
   recentRemainingSeconds = 0;
-  hideDefeatModal(defeatModal);
   setSelectedTower(towerTypes[0].id);
   markStateDirty();
   updateUI();
@@ -139,7 +162,44 @@ const startWave = () => {
   gameState.isCountingDown = true;
   gameState.countdownRemaining = 5;
   markStateDirty();
-  updateWaveButton(startWaveBtn, gameState.isCountingDown, gameState.countdownRemaining);
+};
+
+const initUi = () => {
+  ui = mount(UiRoot, {
+    target: uiRoot,
+    props: {
+      uiState,
+      towerTypes,
+      towerSprites,
+      onStartWave: () => {
+        audio.unlock();
+        startWave();
+        updateUI();
+      },
+      onResetGame: () => {
+        audio.unlock();
+        resetGame();
+      },
+      onToggleSound: () => {
+        audio.unlock();
+        gameState.soundEnabled = !gameState.soundEnabled;
+        markStateDirty();
+        updateUI();
+      },
+      onSelectTower: (towerId: string | null) => {
+        setSelectedTower(towerId);
+        updateUI();
+      },
+      onStartDragTower: (towerId: string) => {
+        startTowerDrag(towerId);
+        updateUI();
+      },
+      onDefeatReset: () => {
+        resetGame();
+      },
+    },
+  });
+  updateUI();
 };
 
 const handlePointer = (event: PointerEvent) => {
@@ -154,17 +214,6 @@ const handlePointer = (event: PointerEvent) => {
     return;
   }
   selectedTowerId = null;
-  if (!gameState.selectedTower) return;
-  if (isDragging) return;
-  if (!canPlaceTower(col, row)) return;
-  if (gameState.gold < gameState.selectedTower.cost) return;
-  const rangeBonus =
-    gameState.selectedTower.types.includes("Bow") && isTreeTile(col, row, pathTiles) ? BOW_TREE_RANGE_BONUS : 0;
-  const placedTower = addTower(col, row, gameState.selectedTower, rangeBonus);
-  gameState.gold -= gameState.selectedTower.cost;
-  recentTowerId = placedTower.id;
-  recentRemainingSeconds = RANGE_DISPLAY_DURATION;
-  markStateDirty();
 };
 
 const loadSavedGame = () => {
@@ -202,6 +251,10 @@ const loadSavedGame = () => {
 };
 
 const loop = (timestamp: number) => {
+  if (!renderer) {
+    requestAnimationFrame(loop);
+    return;
+  }
   const dt = Math.min((timestamp - lastTime) / 1000, 0.05) || 0;
   lastTime = timestamp;
   const size = getTileSize(canvas, grid);
@@ -234,7 +287,7 @@ const loop = (timestamp: number) => {
             y: localY,
             range: tower.range,
             color: tower.color,
-            sprite: towerSprites[tower.id],
+            spriteId: tower.id,
           };
         })()
       : null;
@@ -242,24 +295,19 @@ const loop = (timestamp: number) => {
   if (gameState.lives <= 0) {
     if (!isDefeated) {
       isDefeated = true;
-      showDefeatModal(defeatModal);
       markStateDirty();
     }
-    drawFrame(
-      ctx,
+    renderer.updateFrame({
       size,
-      pathTiles,
-      gameState.towers,
-      gameState.enemies,
-      gameState.projectiles,
-      towerSprites,
-      enemySprites,
-      grid.cols,
-      grid.rows,
-      highlightTowerId,
+      cols: grid.cols,
+      rows: grid.rows,
+      towers: gameState.towers,
+      enemies: gameState.enemies,
+      projectiles: gameState.projectiles,
+      highlightedTowerId: highlightTowerId,
       highlightAlpha,
-      dragPreview ?? undefined,
-    );
+      dragPreview: dragPreview ?? undefined,
+    });
     updateUI();
     if (isStateDirty) {
       saveGame(gameState);
@@ -275,21 +323,17 @@ const loop = (timestamp: number) => {
   updateTowers(gameState, dt, size);
   updateProjectiles(gameState, dt, (towerTypeId) => audio.playDamageSound(towerTypeId, gameState.soundEnabled));
 
-  drawFrame(
-    ctx,
+  renderer.updateFrame({
     size,
-    pathTiles,
-    gameState.towers,
-    gameState.enemies,
-    gameState.projectiles,
-    towerSprites,
-    enemySprites,
-    grid.cols,
-    grid.rows,
-    highlightTowerId,
+    cols: grid.cols,
+    rows: grid.rows,
+    towers: gameState.towers,
+    enemies: gameState.enemies,
+    projectiles: gameState.projectiles,
+    highlightedTowerId: highlightTowerId,
     highlightAlpha,
-    dragPreview ?? undefined,
-  );
+    dragPreview: dragPreview ?? undefined,
+  });
 
   updateUI();
 
@@ -301,65 +345,49 @@ const loop = (timestamp: number) => {
   requestAnimationFrame(loop);
 };
 
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
+const startApp = async () => {
+  renderer = await createPixiRenderer({ canvas, pathTiles, towerSprites, enemySprites });
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
 
-buildTowerList(towerListEl, towerTypes, towerSprites, setSelectedTower, startTowerDrag);
+  initUi();
 
-isLoading = true;
-loadSavedGame();
-isLoading = false;
-updateUI();
+  isLoading = true;
+  loadSavedGame();
+  isLoading = false;
+  updateUI();
 
-canvas.addEventListener("pointerdown", (event) => {
-  audio.unlock();
-  canvas.setPointerCapture(event.pointerId);
-  handlePointer(event);
-});
+  canvas.addEventListener("pointerdown", (event) => {
+    audio.unlock();
+    canvas.setPointerCapture(event.pointerId);
+    handlePointer(event);
+  });
 
-window.addEventListener("pointermove", (event) => {
-  updateDragPointer(event);
-});
+  window.addEventListener("pointermove", (event) => {
+    updateDragPointer(event);
+  });
 
-window.addEventListener("pointerup", (event) => {
-  if (!isDragging) return;
-  const rect = canvas.getBoundingClientRect();
-  const size = getTileSize(canvas, grid);
-  const localX = event.clientX - rect.left;
-  const localY = event.clientY - rect.top;
-  if (localX >= 0 && localY >= 0 && localX <= rect.width && localY <= rect.height) {
-    const { col, row } = screenToGrid(localX, localY, size);
-    const tower = towerTypes.find((item) => item.id === dragTowerTypeId);
-    if (tower && canPlaceTower(col, row) && gameState.gold >= tower.cost) {
-      const rangeBonus = tower.types.includes("Bow") && isTreeTile(col, row, pathTiles) ? BOW_TREE_RANGE_BONUS : 0;
-      const placedTower = addTower(col, row, tower, rangeBonus);
-      gameState.gold -= tower.cost;
-      recentTowerId = placedTower.id;
-      recentRemainingSeconds = RANGE_DISPLAY_DURATION;
+  window.addEventListener("pointerup", (event) => {
+    if (!isDragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const size = getTileSize(canvas, grid);
+    const localX = event.clientX - rect.left;
+    const localY = event.clientY - rect.top;
+    if (localX >= 0 && localY >= 0 && localX <= rect.width && localY <= rect.height) {
+      const { col, row } = screenToGrid(localX, localY, size);
+      const tower = towerTypes.find((item) => item.id === dragTowerTypeId);
+      if (tower && canPlaceTower(col, row) && gameState.gold >= tower.cost) {
+        const rangeBonus = tower.types.includes("Bow") && isTreeTile(col, row, pathTiles) ? BOW_TREE_RANGE_BONUS : 0;
+        const placedTower = addTower(col, row, tower, rangeBonus);
+        gameState.gold -= tower.cost;
+        recentTowerId = placedTower.id;
+        recentRemainingSeconds = RANGE_DISPLAY_DURATION;
+      }
     }
-  }
-  stopTowerDrag();
-});
+    stopTowerDrag();
+  });
 
-startWaveBtn.addEventListener("click", () => {
-  audio.unlock();
-  startWave();
-});
+  requestAnimationFrame(loop);
+};
 
-resetBtn.addEventListener("click", () => {
-  audio.unlock();
-  resetGame();
-});
-
-toggleSoundBtn.addEventListener("click", () => {
-  audio.unlock();
-  gameState.soundEnabled = !gameState.soundEnabled;
-  updateSoundButton(toggleSoundBtn, gameState.soundEnabled);
-  markStateDirty();
-});
-
-defeatReset.addEventListener("click", () => {
-  resetGame();
-});
-
-requestAnimationFrame(loop);
+void startApp();

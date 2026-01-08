@@ -6,6 +6,14 @@ const requireElement = <T extends HTMLElement>(id: string) => {
   return element;
 };
 
+const requireSelector = <T extends Element>(selector: string, root: ParentNode = document) => {
+  const element = root.querySelector(selector) as T | null;
+  if (!element) {
+    throw new Error(`Element not found: ${selector}`);
+  }
+  return element;
+};
+
 const getCanvasContext = (canvas: HTMLCanvasElement) => {
   const ctx = canvas.getContext("2d");
   if (!ctx) {
@@ -14,4 +22,4 @@ const getCanvasContext = (canvas: HTMLCanvasElement) => {
   return ctx;
 };
 
-export { getCanvasContext, requireElement };
+export { getCanvasContext, requireElement, requireSelector };

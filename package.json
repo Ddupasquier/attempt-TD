@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "kill-port 5173 5174 5175 4173 || true && vite",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -12,13 +12,19 @@
     "clean": "rm -rf dist",
     "postinstall": "npm run build"
   },
+  "dependencies": {
+    "pixi.js": "^8.6.6"
+  },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
     "eslint": "^9.12.0",
     "globals": "^15.11.0",
+    "kill-port": "^2.0.1",
     "sass": "^1.77.0",
+    "svelte": "^5.2.0",
     "typescript": "^5.5.4",
-    "vite": "^5.4.8"
+    "vite": "^6.0.0"
   }
 }

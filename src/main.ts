@@ -1,6 +1,6 @@
 import "./style.scss";
 import { createAudioSystem } from "./core/audio";
-import { getFactionForWave, grid, pathPoints, towerTypes, enemySprites, towerSprites } from "./core/data";
+import { assertTowerRanges, enemySprites, getFactionForWave, grid, pathPoints, towerSprites, towerTypes } from "./core/data";
 import { requireElement, getCanvasContext } from "./core/dom";
 import { getTileSize, screenToGrid } from "./core/geometry";
 import { buildPathTiles } from "./core/path";
@@ -57,6 +57,8 @@ const resizeCanvas = () => {
   canvas.height = rect.height * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 };
+
+assertTowerRanges();
 
 const canPlaceTower = (col: number, row: number) => {
   if (col < 0 || row < 0 || col >= grid.cols || row >= grid.rows) return false;

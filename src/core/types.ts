@@ -5,6 +5,7 @@ type TowerType = {
   range: number;
   rate: number;
   damage: number;
+  knockback: number;
   color: string;
   description: string;
 };
@@ -62,6 +63,7 @@ type Projectile = {
   originX: number;
   originY: number;
   maxRange: number;
+  knockbackDistance: number;
 };
 
 type FactionConfig = {

@@ -1,15 +1,17 @@
 import type { FactionConfig, FactionId, Grid, PixelSprite, TowerType } from "./types";
 
 const grid: Grid = { cols: 16, rows: 9 };
+const MIN_TOWER_RANGE = 1.3;
 
 const towerTypes: TowerType[] = [
   {
     id: "mage",
     name: "Arcane Tower",
     cost: 60,
-    range: 2.3,
+    range: 1.9,
     rate: 0.9,
-    damage: 14,
+    damage: 13,
+    knockback: 0,
     color: "#7fd1b9",
     description: "Magic bolts, long range.",
   },
@@ -17,9 +19,10 @@ const towerTypes: TowerType[] = [
     id: "archer",
     name: "Elven Archer",
     cost: 45,
-    range: 1.9,
+    range: 2.6,
     rate: 0.6,
     damage: 8,
+    knockback: 0,
     color: "#e7c27d",
     description: "Fast arrows.",
   },
@@ -27,13 +30,33 @@ const towerTypes: TowerType[] = [
     id: "blade",
     name: "Sword Guard",
     cost: 35,
-    range: 1.0,
+    range: 1.3,
     rate: 0.5,
     damage: 11,
+    knockback: 0,
     color: "#d16f7a",
     description: "Short reach, hard hit.",
   },
+  {
+    id: "warden",
+    name: "Aegis Warden",
+    cost: 55,
+    range: 1.3,
+    rate: 0.5,
+    damage: 2,
+    knockback: 0.35,
+    color: "#7aa6c9",
+    description: "Shield bash, knocks foes back.",
+  },
 ];
+
+const assertTowerRanges = () => {
+  const invalidTowers = towerTypes.filter((tower) => tower.range < MIN_TOWER_RANGE);
+  if (invalidTowers.length > 0) {
+    const names = invalidTowers.map((tower) => tower.name).join(", ");
+    throw new Error(`Tower range below minimum (${MIN_TOWER_RANGE}): ${names}`);
+  }
+};
 
 const pathPoints = [
   { x: 0, y: 4 },
@@ -187,55 +210,101 @@ const enemySprites: Record<FactionId, PixelSprite> = {
 const towerSprites: Record<string, PixelSprite> = {
   mage: {
     pixels: [
-      "..nn....",
-      ".nppn...",
-      "nppppn..",
-      "npccpn..",
-      ".nppn...",
-      "..bb....",
-      ".b..b...",
-      "b....b..",
+      "....xx......",
+      "...xxxx.....",
+      "..xHhhHx....",
+      ".xHHhHHHx...",
+      ".xHHHHHHx...",
+      "..xHHHHx....",
+      "..xBBeeBx...",
+      ".xBBBBBbx.s.",
+      ".xBBBBbbx.s.",
+      "xBBBBBBBBx.s",
+      "xBBBBbBBxxS.",
+      ".xBBBBBBxxS.",
     ],
     colors: {
-      n: "#6d5a94",
-      p: "#f4efe6",
-      c: "#7fd1b9",
-      b: "#3c6e63",
+      x: "#1a1a1a",
+      H: "#8a5a2b",
+      h: "#b6813a",
+      B: "#2e5fa8",
+      b: "#1f3f70",
+      e: "#f4d35e",
+      s: "#caa06a",
+      S: "#8b6b3f",
     },
   },
   archer: {
     pixels: [
-      "..yy....",
-      ".yppp...",
-      "yppppy..",
-      "ypggpy..",
-      ".yppp...",
-      "..gg....",
-      ".g..g...",
-      "g....g..",
+      "....xx......",
+      "...xGGx.....",
+      "..xGGGGx....",
+      ".xGGgGGGx...",
+      ".xGgGgGGx...",
+      "..xGGGGx....",
+      "..xEEeeEx...",
+      ".xEEEEEex...",
+      ".xEEeeEex...",
+      "xEEEEEEEEs.",
+      "xEEEeEExxs.",
+      ".xEEEEExxs.",
     ],
     colors: {
-      y: "#e7c27d",
-      p: "#f4efe6",
-      g: "#6a8754",
+      x: "#1a1a1a",
+      G: "#2f6b4b",
+      g: "#3c8a5f",
+      E: "#e7c27d",
+      e: "#c59b53",
+      s: "#8b6b3f",
     },
   },
   blade: {
     pixels: [
-      "..rr....",
-      ".rppp...",
-      "rppppr..",
-      "rpqqpr..",
-      ".rppp...",
-      "..ss....",
-      ".s..s...",
-      "s....s..",
+      "....xx......",
+      "...xRRx.....",
+      "..xRRRRx....",
+      ".xRRrRRRx...",
+      ".xRRRRRRx...",
+      "..xRRRRx....",
+      "..xWWwwWx...",
+      ".xWWWWWwx...",
+      ".xWWwwWwx...",
+      "xWWWWWWWWs.",
+      "xWWWwWWxxs.",
+      ".xWWWWWxxs.",
     ],
     colors: {
-      r: "#d16f7a",
-      p: "#f4efe6",
-      s: "#7a6b62",
-      q: "#c7c0b5",
+      x: "#1a1a1a",
+      R: "#8a3b3b",
+      r: "#b14b4b",
+      W: "#c7c0b5",
+      w: "#9f968a",
+      s: "#8b6b3f",
+    },
+  },
+  warden: {
+    pixels: [
+      "....xx......",
+      "...xSSx.....",
+      "..xSSSSx....",
+      ".xSSsSSSx...",
+      ".xSSSSSSx...",
+      "..xSSSSx....",
+      "..xUUuuUx...",
+      ".xUUUUUux...",
+      ".xUUuuUux...",
+      "xUUUUUQQQt.",
+      "xUUuUQQxxt.",
+      ".xUUUQQxxt.",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      S: "#6c7b86",
+      s: "#8a99a3",
+      U: "#8ab4d6",
+      u: "#6d98bc",
+      Q: "#c7c0b5",
+      t: "#8b6b3f",
     },
   },
 };
@@ -255,4 +324,14 @@ const getFactionForWave = (waveNumber: number) =>
   factionProgression.find((faction) => waveNumber >= faction.start && waveNumber <= faction.end) ??
   factionProgression[factionProgression.length - 1];
 
-export { enemySprites, factionProgression, getFactionForWave, grid, pathPoints, towerSprites, towerTypes };
+export {
+  MIN_TOWER_RANGE,
+  assertTowerRanges,
+  enemySprites,
+  factionProgression,
+  getFactionForWave,
+  grid,
+  pathPoints,
+  towerSprites,
+  towerTypes,
+};

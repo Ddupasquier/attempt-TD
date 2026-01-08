@@ -24,6 +24,7 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
 
     tower.cooldown = tower.type.rate;
     const maxRange = tower.type.range * size;
+    const knockbackDistance = tower.type.knockback * size;
     state.projectiles.push({
       x: center.x,
       y: center.y,
@@ -35,6 +36,7 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
       originX: center.x,
       originY: center.y,
       maxRange,
+      knockbackDistance,
     });
   }
 };

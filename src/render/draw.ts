@@ -63,8 +63,9 @@ const drawTowers = (
   for (const tower of towers) {
     const center = tileCenter(tower.col, tower.row, size);
     const sprite = towerSprites[tower.type.id];
-    const pixelSize = size * 0.07;
     if (sprite) {
+      const spriteWidth = sprite.pixels[0]?.length ?? 8;
+      const pixelSize = (size * 0.56) / spriteWidth;
       drawPixelSprite(ctx, center.x, center.y, sprite, pixelSize);
     } else {
       ctx.fillStyle = tower.type.color;
@@ -89,7 +90,9 @@ const drawEnemies = (
   for (const enemy of enemies) {
     if (enemy.x === undefined || enemy.y === undefined) continue;
     const sprite = enemySprites[enemy.faction] ?? enemySprites.orcs;
-    drawPixelSprite(ctx, enemy.x, enemy.y, sprite, size * 0.07);
+    const spriteWidth = sprite.pixels[0]?.length ?? 8;
+    const pixelSize = (size * 0.5) / spriteWidth;
+    drawPixelSprite(ctx, enemy.x, enemy.y, sprite, pixelSize);
 
     const hpWidth = size * 0.5;
     const hpHeight = 4;

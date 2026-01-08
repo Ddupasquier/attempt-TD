@@ -2,9 +2,14 @@
 
 Basic fantasy tower defense prototype.
 
-Build assets:
+Install:
 - `npm install`
+
+Run locally (Vite):
+- `npm run dev`
+
+Build:
 - `npm run build`
 
-Watch during development:
-- `npm run watch`
+Preview build:
+- `npm run preview`

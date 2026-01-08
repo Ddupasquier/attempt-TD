@@ -4,13 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc && sass src/style.scss style.css",
-    "watch": "tsc --watch & sass --watch src/style.scss:style.css",
-    "clean": "rm -f main.js main.js.map style.css",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
     "postinstall": "npm run build"
   },
   "devDependencies": {
     "sass": "^1.77.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vite": "^5.4.8"
   }
 }

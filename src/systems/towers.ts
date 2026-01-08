@@ -7,7 +7,7 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
     if (tower.cooldown > 0) continue;
 
     const center = tileCenter(tower.col, tower.row, size);
-    const range = tower.type.range * size;
+    const range = (tower.type.range + tower.rangeBonus) * size;
     let target = null;
     let bestDist = Infinity;
     for (const enemy of state.enemies) {
@@ -23,7 +23,7 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
     if (!target) continue;
 
     tower.cooldown = tower.type.rate;
-    const maxRange = tower.type.range * size;
+    const maxRange = (tower.type.range + tower.rangeBonus) * size;
     const knockbackDistance = tower.type.knockback * size;
     state.projectiles.push({
       x: center.x,

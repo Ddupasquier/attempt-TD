@@ -1,6 +1,7 @@
 type TowerType = {
   id: string;
   name: string;
+  types: string[];
   cost: number;
   range: number;
   rate: number;
@@ -16,6 +17,7 @@ type Tower = {
   row: number;
   type: TowerType;
   cooldown: number;
+  rangeBonus: number;
 };
 
 type FactionId =
@@ -40,6 +42,8 @@ type Enemy = {
   y?: number;
   vx?: number;
   vy?: number;
+  knockbackX?: number;
+  knockbackY?: number;
   reachedEnd?: boolean;
 };
 

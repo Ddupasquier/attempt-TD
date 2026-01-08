@@ -7,6 +7,7 @@ const towerTypes: TowerType[] = [
   {
     id: "mage",
     name: "Arcane Tower",
+    types: ["Magic", "Ranged"],
     cost: 60,
     range: 1.9,
     rate: 0.9,
@@ -18,6 +19,7 @@ const towerTypes: TowerType[] = [
   {
     id: "archer",
     name: "Elven Archer",
+    types: ["Bow", "Ranged"],
     cost: 45,
     range: 2.6,
     rate: 0.6,
@@ -29,6 +31,7 @@ const towerTypes: TowerType[] = [
   {
     id: "blade",
     name: "Sword Guard",
+    types: ["Melee"],
     cost: 35,
     range: 1.3,
     rate: 0.5,
@@ -40,6 +43,7 @@ const towerTypes: TowerType[] = [
   {
     id: "warden",
     name: "Aegis Warden",
+    types: ["Shield", "Melee"],
     cost: 55,
     range: 1.3,
     rate: 0.5,

@@ -57,6 +57,18 @@ const updateEnemies = (
     const speed = enemy.speed * size;
     enemy.x += (enemy.vx ?? 0) * speed * dt;
     enemy.y += (enemy.vy ?? 0) * speed * dt;
+
+    const knockbackMagnitude = Math.hypot(enemy.knockbackX ?? 0, enemy.knockbackY ?? 0);
+    if (knockbackMagnitude > 0.001) {
+      enemy.x += (enemy.knockbackX ?? 0) * dt;
+      enemy.y += (enemy.knockbackY ?? 0) * dt;
+      const decay = Math.pow(0.001, dt);
+      enemy.knockbackX = (enemy.knockbackX ?? 0) * decay;
+      enemy.knockbackY = (enemy.knockbackY ?? 0) * decay;
+    } else {
+      enemy.knockbackX = 0;
+      enemy.knockbackY = 0;
+    }
   }
 
   for (let i = state.enemies.length - 1; i >= 0; i -= 1) {

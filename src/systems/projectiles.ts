@@ -47,8 +47,9 @@ const updateProjectiles = (
           }
         }
         if (directionX !== 0 || directionY !== 0) {
-          bolt.target.x -= directionX * bolt.knockbackDistance;
-          bolt.target.y -= directionY * bolt.knockbackDistance;
+          const pushSpeed = bolt.knockbackDistance * 6;
+          bolt.target.knockbackX = (bolt.target.knockbackX ?? 0) - directionX * pushSpeed;
+          bolt.target.knockbackY = (bolt.target.knockbackY ?? 0) - directionY * pushSpeed;
         }
       }
       playDamageSound(bolt.towerTypeId);

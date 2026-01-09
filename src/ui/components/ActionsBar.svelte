@@ -1,5 +1,8 @@
 <script lang="ts">
   import { UI_TEXT } from "../text";
+  import PlayIcon from "./icons/PlayIcon.svelte";
+  import ResetIcon from "./icons/ResetIcon.svelte";
+  import SoundIcon from "./icons/SoundIcon.svelte";
 
   const { isCountingDown, countdownRemaining, soundEnabled, onStartWave, onResetGame, onToggleSound } = $props();
   const getCountdownSeconds = () => Math.max(1, Math.ceil(countdownRemaining));
@@ -16,9 +19,7 @@
     type="button"
     on:click={onStartWave}
   >
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <polygon points="8,6 18,12 8,18"></polygon>
-    </svg>
+    <PlayIcon />
     <span class="action-label">{UI_TEXT.startWaveLabel}</span>
   </button>
   <button
@@ -27,16 +28,7 @@
     aria-label={UI_TEXT.resetAria}
     on:click={onResetGame}
   >
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M6 6v5h5M19 12a7 7 0 1 1-2.05-4.95"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
+    <ResetIcon />
   </button>
   <button
     class="action-button action-sound"
@@ -45,10 +37,6 @@
     aria-label={soundEnabled ? UI_TEXT.soundOnAria : UI_TEXT.soundOffAria}
     on:click={onToggleSound}
   >
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 10h4l5-4v12l-5-4H4z"></path>
-      <path class="sound-wave" d="M16 9c1.2 1 1.2 5 0 6" fill="none" stroke="currentColor" stroke-width="2" />
-      <path class="sound-wave" d="M18.5 7c2 2 2 8 0 10" fill="none" stroke="currentColor" stroke-width="2" />
-    </svg>
+    <SoundIcon />
   </button>
 </div>

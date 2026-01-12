@@ -78,9 +78,13 @@ const updateProjectiles = (
           }
         }
         if (directionX !== 0 || directionY !== 0) {
+          const typeScale =
+            bolt.target.isBoss || bolt.target.type === "boss"
+              ? GAME_CONFIG.enemy.bossKnockbackDistanceMultiplier
+              : GAME_CONFIG.enemy.types[bolt.target.type].knockbackDistanceMultiplier;
           const resistance =
             bolt.target.isBoss || bolt.target.type === "elite" ? 0.5 : 1;
-          const knockbackDistance = bolt.knockbackDistance * 2.2 * resistance;
+          const knockbackDistance = bolt.knockbackDistance * 2.6 * resistance * typeScale;
           bolt.target.knockbackRemaining = Math.max(
             bolt.target.knockbackRemaining ?? 0,
             knockbackDistance,

@@ -38,12 +38,43 @@ type GameConfig = {
     bossSpeedMultiplier: number;
     bossScale: number;
     bossKnockbackResistSeconds: number;
+    bossKnockbackDistanceMultiplier: number;
     types: {
-      skirmisher: { hpMultiplier: number; speedMultiplier: number; sizeScale: number; knockbackResistSeconds: number };
-      raider: { hpMultiplier: number; speedMultiplier: number; sizeScale: number; knockbackResistSeconds: number };
-      bruiser: { hpMultiplier: number; speedMultiplier: number; sizeScale: number; knockbackResistSeconds: number };
-      bulwark: { hpMultiplier: number; speedMultiplier: number; sizeScale: number; knockbackResistSeconds: number };
-      elite: { hpMultiplier: number; speedMultiplier: number; sizeScale: number; knockbackResistSeconds: number };
+      skirmisher: {
+        hpMultiplier: number;
+        speedMultiplier: number;
+        sizeScale: number;
+        knockbackResistSeconds: number;
+        knockbackDistanceMultiplier: number;
+      };
+      raider: {
+        hpMultiplier: number;
+        speedMultiplier: number;
+        sizeScale: number;
+        knockbackResistSeconds: number;
+        knockbackDistanceMultiplier: number;
+      };
+      bruiser: {
+        hpMultiplier: number;
+        speedMultiplier: number;
+        sizeScale: number;
+        knockbackResistSeconds: number;
+        knockbackDistanceMultiplier: number;
+      };
+      bulwark: {
+        hpMultiplier: number;
+        speedMultiplier: number;
+        sizeScale: number;
+        knockbackResistSeconds: number;
+        knockbackDistanceMultiplier: number;
+      };
+      elite: {
+        hpMultiplier: number;
+        speedMultiplier: number;
+        sizeScale: number;
+        knockbackResistSeconds: number;
+        knockbackDistanceMultiplier: number;
+      };
     };
     typeSpawnWeights: Array<{
       maxWave: number;

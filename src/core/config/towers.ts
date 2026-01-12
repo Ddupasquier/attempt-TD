@@ -67,7 +67,7 @@ const TOWER_CONFIG = {
       id: TOWER_IDS.catapult,
       name: "Catapult",
       types: ["Siege", "Ranged"],
-      cost: 140,
+      cost: 190,
       range: 6.5,
       rate: 7,
       damage: 55,

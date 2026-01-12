@@ -39,8 +39,11 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
     }
     let target = null;
     let bestDist = Infinity;
+    const skipKnockbackResist =
+      tower.type.id === TOWER_IDS.warden && stats.knockback > 0;
     for (const enemy of state.enemies) {
       if (enemy.x === undefined || enemy.y === undefined) continue;
+      if (skipKnockbackResist && (enemy.knockbackResistRemaining ?? 0) > 0) continue;
       const dx = enemy.x - center.x;
       const dy = enemy.y - center.y;
       const dist = Math.hypot(dx, dy);

@@ -3,6 +3,7 @@ import type { GameState } from "../types/core/types";
 const createInitialState = (): GameState => ({
   gold: 140,
   lives: 15,
+  maxLives: 15,
   wave: 1,
   towers: [],
   enemies: [],

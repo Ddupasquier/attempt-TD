@@ -336,6 +336,7 @@ const loadSavedGame = () => {
   }
   gameState.gold = data.gold ?? gameState.gold;
   gameState.lives = data.lives ?? gameState.lives;
+  gameState.lives = Math.min(gameState.lives, gameState.maxLives);
   gameState.wave = data.wave ?? gameState.wave;
   gameState.soundEnabled = data.soundEnabled ?? gameState.soundEnabled;
   gameState.autoWaveEnabled = data.autoWaveEnabled ?? gameState.autoWaveEnabled;

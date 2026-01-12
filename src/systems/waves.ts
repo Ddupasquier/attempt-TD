@@ -11,6 +11,7 @@ const startNewWave = (state: GameState) => {
     totalSpawns: GAME_CONFIG.wave.baseSpawns + waveNumber * GAME_CONFIG.wave.spawnsPerWave,
     remainingEnemies: 0,
     bossSpawned: false,
+    livesLost: false,
   };
   state.waves.push(wave);
   state.wave += 1;
@@ -47,6 +48,9 @@ const updateWaves = (
       wave.spawnTimer = GAME_CONFIG.wave.spawnInterval;
     }
     if (wave.spawnIndex >= wave.totalSpawns && wave.remainingEnemies <= 0) {
+      if (!wave.livesLost) {
+        state.lives = Math.min(state.maxLives, state.lives + 1);
+      }
       state.waves.splice(i, 1);
       state.gold += GAME_CONFIG.wave.waveReward;
       onWaveComplete();

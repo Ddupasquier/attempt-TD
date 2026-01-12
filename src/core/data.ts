@@ -75,14 +75,14 @@ const ENEMY_ARCHETYPE_PIXELS: Record<EnemyType, string[]> = {
     "b....b..",
   ],
   boss: [
+    ".dd..dd.",
+    "dbbbbbd.",
+    "bbbbbbbb",
+    "bbbcbbbd",
+    "bbbbbbbb",
+    "dbbbbbd.",
+    ".d.bb.d.",
     "..d..d..",
-    ".bbbbbb.",
-    "bbbbbbbb",
-    "bbbacbbb",
-    "bbbbbbbb",
-    ".bbbbbb.",
-    "..bbbb..",
-    ".bb..bb.",
   ],
 };
 

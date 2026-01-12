@@ -47,7 +47,9 @@ const updateProjectiles = (
           }
         }
         if (directionX !== 0 || directionY !== 0) {
-          const pushSpeed = bolt.knockbackDistance * 6;
+          const resistance =
+            bolt.target.isBoss || bolt.target.type === "elite" ? 0.5 : 1;
+          const pushSpeed = bolt.knockbackDistance * 6 * resistance;
           bolt.target.knockbackX = (bolt.target.knockbackX ?? 0) - directionX * pushSpeed;
           bolt.target.knockbackY = (bolt.target.knockbackY ?? 0) - directionY * pushSpeed;
         }

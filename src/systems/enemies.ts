@@ -173,6 +173,7 @@ const updateEnemies = (
       const wave = state.waves.find((item) => item.id === enemy.waveId);
       if (wave) {
         wave.remainingEnemies = Math.max(0, wave.remainingEnemies - 1);
+        wave.livesLost = true;
       }
       onStateChange();
     } else if (enemy.hp <= 0) {

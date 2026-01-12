@@ -59,6 +59,7 @@ type WaveState = {
   totalSpawns: number;
   remainingEnemies: number;
   bossSpawned?: boolean;
+  livesLost?: boolean;
 };
 
 type EnemyType = "skirmisher" | "raider" | "bruiser" | "bulwark" | "elite" | "boss";
@@ -92,6 +93,7 @@ type Grid = {
 type GameState = {
   gold: number;
   lives: number;
+  maxLives: number;
   wave: number;
   towers: Tower[];
   enemies: Enemy[];

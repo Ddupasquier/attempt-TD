@@ -78,6 +78,34 @@ const updateEnemies = (
     y: pathPoints[index].y * size + size * 0.5,
   });
 
+  const getPathDirection = (targetIndex: number, fallbackX: number, fallbackY: number) => {
+    const prevIndex = Math.max(0, targetIndex - 1);
+    const prev = getWaypoint(prevIndex);
+    const next = getWaypoint(targetIndex);
+    const dx = next.x - prev.x;
+    const dy = next.y - prev.y;
+    const len = Math.hypot(dx, dy);
+    if (len <= 0.001) {
+      return { x: fallbackX, y: fallbackY };
+    }
+    return { x: dx / len, y: dy / len };
+  };
+
+  const clampToPathSegment = (enemy: typeof state.enemies[number]) => {
+    const prevIndex = Math.max(0, enemy.targetIndex - 1);
+    const prev = getWaypoint(prevIndex);
+    const next = getWaypoint(enemy.targetIndex);
+    const segX = next.x - prev.x;
+    const segY = next.y - prev.y;
+    const segLenSq = segX * segX + segY * segY;
+    if (segLenSq <= 0.001 || enemy.x === undefined || enemy.y === undefined) return;
+    const px = enemy.x - prev.x;
+    const py = enemy.y - prev.y;
+    const t = Math.max(0, Math.min(1, (px * segX + py * segY) / segLenSq));
+    enemy.x = prev.x + segX * t;
+    enemy.y = prev.y + segY * t;
+  };
+
   for (const enemy of state.enemies) {
     if (enemy.x === undefined || enemy.y === undefined) {
       const start = getWaypoint(0);
@@ -108,8 +136,26 @@ const updateEnemies = (
 
     const knockbackMagnitude = Math.hypot(enemy.knockbackX ?? 0, enemy.knockbackY ?? 0);
     if (knockbackMagnitude > 0.001) {
-      enemy.x += (enemy.knockbackX ?? 0) * dt;
-      enemy.y += (enemy.knockbackY ?? 0) * dt;
+      clampToPathSegment(enemy);
+      const pathDir = getPathDirection(enemy.targetIndex, desiredX, desiredY);
+      enemy.x -= pathDir.x * knockbackMagnitude * dt;
+      enemy.y -= pathDir.y * knockbackMagnitude * dt;
+      clampToPathSegment(enemy);
+      if (enemy.targetIndex > 0) {
+        const prev = getWaypoint(enemy.targetIndex - 1);
+        const next = getWaypoint(enemy.targetIndex);
+        const segX = next.x - prev.x;
+        const segY = next.y - prev.y;
+        const segLenSq = segX * segX + segY * segY;
+        if (segLenSq > 0.001) {
+          const px = (enemy.x ?? prev.x) - prev.x;
+          const py = (enemy.y ?? prev.y) - prev.y;
+          const t = (px * segX + py * segY) / segLenSq;
+          if (t <= 0.02) {
+            enemy.targetIndex -= 1;
+          }
+        }
+      }
       const decay = Math.pow(0.001, dt);
       enemy.knockbackX = (enemy.knockbackX ?? 0) * decay;
       enemy.knockbackY = (enemy.knockbackY ?? 0) * decay;

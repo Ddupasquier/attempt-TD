@@ -1,5 +1,6 @@
-import type { GameState } from "../core/types";
+import type { GameState } from "../types/core/types";
 import { tileCenter } from "../core/geometry";
+import { getTowerStats } from "../core/towerLevels";
 
 const updateTowers = (state: GameState, dt: number, size: number) => {
   for (const tower of state.towers) {
@@ -7,7 +8,8 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
     if (tower.cooldown > 0) continue;
 
     const center = tileCenter(tower.col, tower.row, size);
-    const range = (tower.type.range + tower.rangeBonus) * size;
+    const stats = getTowerStats(tower);
+    const range = stats.range * size;
     let target = null;
     let bestDist = Infinity;
     for (const enemy of state.enemies) {
@@ -22,15 +24,15 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
     }
     if (!target) continue;
 
-    tower.cooldown = tower.type.rate;
-    const maxRange = (tower.type.range + tower.rangeBonus) * size;
-    const knockbackDistance = tower.type.knockback * size;
+    tower.cooldown = stats.rate;
+    const maxRange = stats.range * size;
+    const knockbackDistance = stats.knockback * size;
     state.projectiles.push({
       x: center.x,
       y: center.y,
       target,
       speed: 4.5 * size,
-      damage: tower.type.damage,
+      damage: stats.damage,
       color: tower.type.color,
       towerTypeId: tower.type.id,
       originX: center.x,

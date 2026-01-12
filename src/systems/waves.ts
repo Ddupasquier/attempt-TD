@@ -1,14 +1,16 @@
-import type { GameState, WaveState } from "../core/types";
+import type { GameState, WaveState } from "../types/core/types";
+import { GAME_CONFIG } from "../core/config";
 
 const startNewWave = (state: GameState) => {
   const waveNumber = state.wave;
   const wave: WaveState = {
     id: crypto.randomUUID(),
     waveNumber,
-    spawnTimer: 0.2,
+    spawnTimer: GAME_CONFIG.wave.initialSpawnDelay,
     spawnIndex: 0,
-    totalSpawns: 12 + waveNumber * 2,
+    totalSpawns: GAME_CONFIG.wave.baseSpawns + waveNumber * GAME_CONFIG.wave.spawnsPerWave,
     remainingEnemies: 0,
+    bossSpawned: false,
   };
   state.waves.push(wave);
   state.wave += 1;
@@ -28,19 +30,25 @@ const updateWaves = (
   state: GameState,
   dt: number,
   spawnEnemy: (wave: WaveState) => void,
+  spawnBossEnemy: (wave: WaveState) => void,
+  isBossWave: (waveNumber: number) => boolean,
   onWaveComplete: () => void,
 ) => {
   for (let i = state.waves.length - 1; i >= 0; i -= 1) {
     const wave = state.waves[i];
+    if (!wave.bossSpawned && isBossWave(wave.waveNumber)) {
+      spawnBossEnemy(wave);
+      wave.bossSpawned = true;
+    }
     wave.spawnTimer -= dt;
     if (wave.spawnTimer <= 0 && wave.spawnIndex < wave.totalSpawns) {
       spawnEnemy(wave);
       wave.spawnIndex += 1;
-      wave.spawnTimer = 0.7;
+      wave.spawnTimer = GAME_CONFIG.wave.spawnInterval;
     }
     if (wave.spawnIndex >= wave.totalSpawns && wave.remainingEnemies <= 0) {
       state.waves.splice(i, 1);
-      state.gold += 40;
+      state.gold += GAME_CONFIG.wave.waveReward;
       onWaveComplete();
     }
   }

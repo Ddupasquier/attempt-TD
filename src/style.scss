@@ -25,6 +25,10 @@ body {
     linear-gradient(120deg, #1a1312 0%, #2a1f1b 45%, #1a1412 100%);
 }
 
+body.is-fullscreen {
+  overflow: hidden;
+}
+
 .shell {
   min-height: 100vh;
   display: flex;
@@ -54,6 +58,11 @@ body {
   justify-content: center;
   align-items: flex-start;
   min-height: 0;
+}
+
+body.is-fullscreen .game-stage {
+  padding: 0;
+  align-items: center;
 }
 
 .ui-root {
@@ -426,6 +435,16 @@ button + button {
   color: #1c274c;
 }
 
+.action-button.action-speed {
+  font-family: "Press Start 2P", "Space Grotesk", sans-serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+}
+
+.action-speed__label {
+  display: inline-block;
+}
+
 .action-button--text {
   width: auto;
   min-width: 120px;
@@ -466,4 +485,100 @@ button + button {
 
 .action-button.is-muted .sound-wave {
   opacity: 0.2;
+}
+
+.action-button.is-active {
+  border-color: rgba(127, 209, 185, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 0 2px rgba(127, 209, 185, 0.2),
+    0 6px 14px rgba(0, 0, 0, 0.35);
+  color: #1c3a33;
+}
+
+.action-auto.is-active svg {
+  animation: auto-spin 1.2s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes auto-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tower-upgrade {
+  position: absolute;
+  width: 190px;
+  padding: 10px;
+  border-radius: 14px;
+  background:
+    linear-gradient(160deg, rgba(53, 39, 33, 0.98), rgba(26, 20, 18, 0.98)),
+    radial-gradient(circle at top right, rgba(255, 219, 158, 0.15), transparent 60%);
+  border: 1px solid rgba(255, 226, 185, 0.22);
+  box-shadow: 0 16px 26px rgba(0, 0, 0, 0.5);
+  color: var(--text);
+  pointer-events: auto;
+}
+
+.tower-upgrade__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.tower-upgrade__title {
+  font-family: "Press Start 2P", "Space Grotesk", sans-serif;
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.tower-upgrade__level {
+  font-size: 0.58rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.tower-upgrade__body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.62rem;
+}
+
+.tower-upgrade__prompt {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tower-upgrade__cost {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.tower-upgrade__stats {
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.tower-upgrade__stat {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.tower-upgrade__value {
+  color: #f8e7c4;
+}
+
+.tower-upgrade__button {
+  margin-top: 8px;
+  width: 100%;
+  padding: 7px;
+  font-size: 0.55rem;
+  border-radius: 10px;
 }

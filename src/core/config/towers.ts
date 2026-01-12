@@ -1,0 +1,69 @@
+import { TOWER_IDS } from "../../constants/towerIds";
+
+const TOWER_CONFIG = {
+  minRange: 1.3,
+  maxLevel: 3,
+  levelStats: [
+    { damageMult: 1, rangeMult: 1, rateMult: 1, knockbackMult: 1 },
+    { damageMult: 1.2, rangeMult: 1.1, rateMult: 0.92, knockbackMult: 1.1 },
+    { damageMult: 1.4, rangeMult: 1.2, rateMult: 0.85, knockbackMult: 1.2 },
+    { damageMult: 1.7, rangeMult: 1.3, rateMult: 0.78, knockbackMult: 1.3 },
+  ],
+  levelCosts: [
+    { level: 1, costMultiplier: 1.2 },
+    { level: 2, costMultiplier: 1.6 },
+    { level: 3, costMultiplier: 2.1 },
+  ],
+  types: [
+    {
+      id: TOWER_IDS.mage,
+      name: "Arcane Tower",
+      types: ["Magic", "Ranged"],
+      cost: 75,
+      range: 1.8,
+      rate: 1.0,
+      damage: 11,
+      knockback: 0,
+      color: "#7fd1b9",
+      description: "Magic bolts, long range.",
+    },
+    {
+      id: TOWER_IDS.archer,
+      name: "Elven Archer",
+      types: ["Bow", "Ranged"],
+      cost: 60,
+      range: 2.4,
+      rate: 0.7,
+      damage: 7,
+      knockback: 0,
+      color: "#e7c27d",
+      description: "Fast arrows.",
+    },
+    {
+      id: TOWER_IDS.blade,
+      name: "Sword Guard",
+      types: ["Melee"],
+      cost: 48,
+      range: 1.3,
+      rate: 0.6,
+      damage: 10,
+      knockback: 0,
+      color: "#d16f7a",
+      description: "Short reach, hard hit.",
+    },
+    {
+      id: TOWER_IDS.warden,
+      name: "Aegis Warden",
+      types: ["Shield", "Melee"],
+      cost: 70,
+      range: 1.3,
+      rate: 0.6,
+      damage: 2,
+      knockback: 0.3,
+      color: "#7aa6c9",
+      description: "Shield bash, knocks foes back.",
+    },
+  ],
+};
+
+export { TOWER_CONFIG };

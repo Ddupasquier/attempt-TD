@@ -1,34 +1,9 @@
 import * as PIXI from "pixi.js";
 import { getTerrainFeatureAtTile } from "../core/terrain";
 import { tileCenter } from "../core/geometry";
-import type { Enemy, PixelSprite, Projectile, Tower } from "../core/types";
-
-type DragPreview = {
-  x: number;
-  y: number;
-  range: number;
-  color: string;
-  spriteId?: string;
-};
-
-type FrameData = {
-  size: number;
-  cols: number;
-  rows: number;
-  towers: Tower[];
-  enemies: Enemy[];
-  projectiles: Projectile[];
-  highlightedTowerId: string | null;
-  highlightAlpha: number;
-  dragPreview?: DragPreview;
-};
-
-type RendererOptions = {
-  canvas: HTMLCanvasElement;
-  pathTiles: Set<string>;
-  towerSprites: Record<string, PixelSprite>;
-  enemySprites: Record<string, PixelSprite>;
-};
+import { getTowerStats, MAX_TOWER_LEVEL } from "../core/towerLevels";
+import type { Enemy, Projectile, Tower } from "../types/core/types";
+import type { FrameData, RendererOptions } from "../types/render/pixiRendererTypes";
 
 const hash = (col: number, row: number, salt: number) => {
   let value = (col + 37) * 928371 + (row + 17) * 523987 + salt * 9349;
@@ -63,7 +38,7 @@ const createSpriteTexture = (sprite: PixelSprite) => {
     }
   }
   const texture = PIXI.Texture.from(canvas);
-  texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+  texture.source.scaleMode = "nearest";
   return texture;
 };
 
@@ -217,12 +192,13 @@ const createPixiRenderer = async (options: RendererOptions) => {
 
   const terrainLayer = new PIXI.Graphics();
   const towersLayer = new PIXI.Container();
+  const starsLayer = new PIXI.Container();
   const enemiesLayer = new PIXI.Container();
   const healthBarsLayer = new PIXI.Container();
-  const projectilesLayer = new PIXI.ParticleContainer();
+  const projectilesLayer = new PIXI.Container();
   const overlayLayer = new PIXI.Container();
 
-  app.stage.addChild(terrainLayer, towersLayer, enemiesLayer, healthBarsLayer, projectilesLayer, overlayLayer);
+  app.stage.addChild(terrainLayer, towersLayer, starsLayer, enemiesLayer, healthBarsLayer, projectilesLayer, overlayLayer);
 
   const towerTextures = new Map<string, PIXI.Texture>();
   const enemyTextures = new Map<string, PIXI.Texture>();
@@ -234,6 +210,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
   });
 
   const towerSpritesById = new Map<string, PIXI.Sprite>();
+  const starGraphicsById = new Map<string, PIXI.Graphics>();
   const enemySpritesById = new Map<string, PIXI.Sprite>();
   const healthBarsById = new Map<string, PIXI.Graphics>();
   const projectilePool: PIXI.Sprite[] = [];
@@ -249,12 +226,29 @@ const createPixiRenderer = async (options: RendererOptions) => {
     app.renderer.resize(rect.width, rect.height);
   };
 
+  const drawStar = (graphics: PIXI.Graphics, x: number, y: number, outerRadius: number, color: number) => {
+    const innerRadius = outerRadius * 0.5;
+    const points: number[] = [];
+    for (let i = 0; i < 10; i += 1) {
+      const angle = (Math.PI / 5) * i - Math.PI / 2;
+      const radius = i % 2 === 0 ? outerRadius : innerRadius;
+      points.push(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+    }
+    graphics.poly(points).fill(color);
+  };
+
   const updateTowers = (size: number, towers: Tower[]) => {
     const activeIds = new Set(towers.map((tower) => tower.id));
     for (const [id, sprite] of towerSpritesById.entries()) {
       if (!activeIds.has(id)) {
         towersLayer.removeChild(sprite);
         towerSpritesById.delete(id);
+      }
+    }
+    for (const [id, starGraphic] of starGraphicsById.entries()) {
+      if (!activeIds.has(id)) {
+        starsLayer.removeChild(starGraphic);
+        starGraphicsById.delete(id);
       }
     }
     for (const tower of towers) {
@@ -271,6 +265,33 @@ const createPixiRenderer = async (options: RendererOptions) => {
       const scale = (size * 0.56) / textureWidth;
       sprite.scale.set(scale);
       sprite.position.set(center.x, center.y);
+
+      const level = Math.min(tower.level, MAX_TOWER_LEVEL);
+      if (level > 0) {
+        let starGraphic = starGraphicsById.get(tower.id);
+        if (!starGraphic) {
+          starGraphic = new PIXI.Graphics();
+          starsLayer.addChild(starGraphic);
+          starGraphicsById.set(tower.id, starGraphic);
+        }
+        starGraphic.clear();
+        const baseY = center.y - size * 0.48;
+        if (level === MAX_TOWER_LEVEL) {
+          drawStar(starGraphic, center.x, baseY, size * 0.16, 0xe66ca7);
+        } else {
+          const starColor = 0xf2c14f;
+          const offset = size * 0.14;
+          drawStar(starGraphic, center.x - (level > 1 ? offset : 0), baseY, size * 0.11, starColor);
+          if (level > 1) {
+            drawStar(starGraphic, center.x + offset, baseY, size * 0.11, starColor);
+          }
+        }
+      } else {
+        const starGraphic = starGraphicsById.get(tower.id);
+        if (starGraphic) {
+          starGraphic.clear();
+        }
+      }
     }
   };
 
@@ -299,7 +320,8 @@ const createPixiRenderer = async (options: RendererOptions) => {
         enemySpritesById.set(enemy.id, sprite);
       }
       const textureWidth = sprite.texture.width || 1;
-      const scale = (size * 0.5) / textureWidth;
+      const sizeScale = enemy.sizeScale ?? 1;
+      const scale = (size * 0.5 * sizeScale) / textureWidth;
       sprite.scale.set(scale);
       sprite.position.set(enemy.x, enemy.y);
 
@@ -311,10 +333,10 @@ const createPixiRenderer = async (options: RendererOptions) => {
       }
       const maxHp = enemy.maxHp || 1;
       const hpRatio = Math.max(0, Math.min(1, enemy.hp / maxHp));
-      const barWidth = size * 0.6;
+      const barWidth = size * 0.6 * sizeScale;
       const barHeight = Math.max(2, size * 0.08);
       const barX = enemy.x - barWidth / 2;
-      const barY = enemy.y - size * 0.55;
+      const barY = enemy.y - size * 0.55 * sizeScale;
       bar.clear();
       bar.rect(barX, barY, barWidth, barHeight).fill(0x2a1b18);
       if (hpRatio > 0) {
@@ -326,7 +348,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const updateProjectiles = (projectiles: Projectile[]) => {
     while (projectilePool.length < projectiles.length) {
       const sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-      projectilesLayer.addParticle(sprite);
+      projectilesLayer.addChild(sprite);
       projectilePool.push(sprite);
     }
 
@@ -352,8 +374,9 @@ const createPixiRenderer = async (options: RendererOptions) => {
       if (tower) {
         const center = tileCenter(tower.col, tower.row, frame.size);
         const strokeWidth = Math.max(1.5, frame.size * 0.04);
+        const stats = getTowerStats(tower);
         overlayGraphics
-          .circle(center.x, center.y, (tower.type.range + tower.rangeBonus) * frame.size)
+          .circle(center.x, center.y, stats.range * frame.size)
           .stroke({ width: strokeWidth, color: 0xffffff, alpha: 0.45 * frame.highlightAlpha });
       }
     }

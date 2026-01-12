@@ -1,4 +1,4 @@
-import type { GameState, SaveData } from "./types";
+import type { GameState, SaveData } from "../types/core/types";
 
 const STORAGE_KEY = "fantasy-td-save";
 
@@ -8,11 +8,13 @@ const saveGame = (state: GameState) => {
     lives: state.lives,
     wave: state.wave,
     soundEnabled: state.soundEnabled,
+    autoWaveEnabled: state.autoWaveEnabled,
     selectedTowerId: state.selectedTower ? state.selectedTower.id : null,
     towers: state.towers.map((tower) => ({
       col: tower.col,
       row: tower.row,
       typeId: tower.type.id,
+      level: tower.level,
     })),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

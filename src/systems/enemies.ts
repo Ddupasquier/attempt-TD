@@ -1,9 +1,12 @@
-import type { GameState, WaveState } from "../core/types";
-import { getFactionForWave, pathPoints } from "../core/data";
+import type { GameState, WaveState } from "../types/core/types";
+import { pathPoints } from "../core/data";
+import { GAME_CONFIG, getFactionForWave } from "../core/config";
+
+const isBossWave = (waveNumber: number) => waveNumber % GAME_CONFIG.enemy.bossInterval === 0;
 
 const spawnEnemy = (state: GameState, wave: WaveState) => {
-  const hp = 32 + wave.waveNumber * 6;
-  const speed = 0.6 + wave.waveNumber * 0.03;
+  const hp = GAME_CONFIG.enemy.baseHp + wave.waveNumber * GAME_CONFIG.enemy.hpPerWave;
+  const speed = GAME_CONFIG.enemy.baseSpeed + wave.waveNumber * GAME_CONFIG.enemy.speedPerWave;
   const faction = getFactionForWave(wave.waveNumber);
   state.enemies.push({
     id: crypto.randomUUID(),
@@ -13,6 +16,24 @@ const spawnEnemy = (state: GameState, wave: WaveState) => {
     waveId: wave.id,
     faction: faction.id,
     targetIndex: 1,
+  });
+  wave.remainingEnemies += 1;
+};
+
+const spawnBossEnemy = (state: GameState, wave: WaveState) => {
+  const baseHp = GAME_CONFIG.enemy.baseHp + wave.waveNumber * GAME_CONFIG.enemy.hpPerWave;
+  const baseSpeed = GAME_CONFIG.enemy.baseSpeed + wave.waveNumber * GAME_CONFIG.enemy.speedPerWave;
+  const faction = getFactionForWave(wave.waveNumber);
+  state.enemies.push({
+    id: crypto.randomUUID(),
+    hp: Math.round(baseHp * GAME_CONFIG.enemy.bossHpMultiplier),
+    maxHp: Math.round(baseHp * GAME_CONFIG.enemy.bossHpMultiplier),
+    speed: baseSpeed * GAME_CONFIG.enemy.bossSpeedMultiplier,
+    waveId: wave.id,
+    faction: faction.id,
+    targetIndex: 1,
+    isBoss: true,
+    sizeScale: GAME_CONFIG.enemy.bossScale,
   });
   wave.remainingEnemies += 1;
 };
@@ -93,4 +114,4 @@ const updateEnemies = (
   }
 };
 
-export { spawnEnemy, updateEnemies };
+export { isBossWave, spawnBossEnemy, spawnEnemy, updateEnemies };

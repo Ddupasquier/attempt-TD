@@ -1,4 +1,4 @@
-import type { PixelSprite } from "../core/types";
+import type { PixelSprite } from "../types/core/types";
 
 const drawTowerCardSprite = (canvas: HTMLCanvasElement, sprite: PixelSprite) => {
   const ctx = canvas.getContext("2d");

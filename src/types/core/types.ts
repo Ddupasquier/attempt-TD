@@ -18,6 +18,7 @@ type Tower = {
   type: TowerType;
   cooldown: number;
   rangeBonus: number;
+  level: number;
 };
 
 type FactionId =
@@ -38,6 +39,8 @@ type Enemy = {
   waveId: string;
   faction: FactionId;
   targetIndex: number;
+  isBoss?: boolean;
+  sizeScale?: number;
   x?: number;
   y?: number;
   vx?: number;
@@ -54,6 +57,7 @@ type WaveState = {
   spawnIndex: number;
   totalSpawns: number;
   remainingEnemies: number;
+  bossSpawned?: boolean;
 };
 
 type Projectile = {
@@ -95,6 +99,7 @@ type GameState = {
   countdownRemaining: number;
   elapsed: number;
   soundEnabled: boolean;
+  autoWaveEnabled: boolean;
 };
 
 type SaveData = {
@@ -102,8 +107,9 @@ type SaveData = {
   lives: number;
   wave: number;
   soundEnabled: boolean;
+  autoWaveEnabled?: boolean;
   selectedTowerId: string | null;
-  towers: Array<{ col: number; row: number; typeId: string }>;
+  towers: Array<{ col: number; row: number; typeId: string; level?: number }>;
 };
 
 type PixelSprite = {

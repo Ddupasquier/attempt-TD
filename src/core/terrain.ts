@@ -1,3 +1,5 @@
+import type { TerrainFeature } from "../types/core/terrainTypes";
+
 const hash = (col: number, row: number, salt: number) => {
   let value = (col + 37) * 928371 + (row + 17) * 523987 + salt * 9349;
   value ^= value << 13;
@@ -5,13 +7,6 @@ const hash = (col: number, row: number, salt: number) => {
   value ^= value << 5;
   return Math.abs(value);
 };
-
-type TerrainFeature =
-  | { type: "tree"; variant: number }
-  | { type: "stump" }
-  | { type: "rock"; variant: number }
-  | { type: "flower" }
-  | { type: "none" };
 
 const getTerrainFeatureAtTile = (col: number, row: number, pathTiles: Set<string>): TerrainFeature => {
   if (pathTiles.has(`${col},${row}`)) {

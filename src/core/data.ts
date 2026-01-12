@@ -1,58 +1,9 @@
-import type { FactionConfig, FactionId, Grid, PixelSprite, TowerType } from "./types";
+import { TOWER_IDS } from "../constants/towerIds";
+import type { FactionId, PixelSprite } from "../types/core/types";
+import { GAME_CONFIG } from "./config";
 
-const grid: Grid = { cols: 16, rows: 9 };
-const MIN_TOWER_RANGE = 1.3;
-
-const towerTypes: TowerType[] = [
-  {
-    id: "mage",
-    name: "Arcane Tower",
-    types: ["Magic", "Ranged"],
-    cost: 60,
-    range: 1.9,
-    rate: 0.9,
-    damage: 13,
-    knockback: 0,
-    color: "#7fd1b9",
-    description: "Magic bolts, long range.",
-  },
-  {
-    id: "archer",
-    name: "Elven Archer",
-    types: ["Bow", "Ranged"],
-    cost: 45,
-    range: 2.6,
-    rate: 0.6,
-    damage: 8,
-    knockback: 0,
-    color: "#e7c27d",
-    description: "Fast arrows.",
-  },
-  {
-    id: "blade",
-    name: "Sword Guard",
-    types: ["Melee"],
-    cost: 35,
-    range: 1.3,
-    rate: 0.5,
-    damage: 11,
-    knockback: 0,
-    color: "#d16f7a",
-    description: "Short reach, hard hit.",
-  },
-  {
-    id: "warden",
-    name: "Aegis Warden",
-    types: ["Shield", "Melee"],
-    cost: 55,
-    range: 1.3,
-    rate: 0.5,
-    damage: 2,
-    knockback: 0.35,
-    color: "#7aa6c9",
-    description: "Shield bash, knocks foes back.",
-  },
-];
+const { grid, towerTypes } = GAME_CONFIG;
+const MIN_TOWER_RANGE = GAME_CONFIG.tower.minRange;
 
 const assertTowerRanges = () => {
   const invalidTowers = towerTypes.filter((tower) => tower.range < MIN_TOWER_RANGE);
@@ -212,7 +163,7 @@ const enemySprites: Record<FactionId, PixelSprite> = {
 };
 
 const towerSprites: Record<string, PixelSprite> = {
-  mage: {
+  [TOWER_IDS.mage]: {
     pixels: [
       "....xx......",
       "...xxxx.....",
@@ -238,7 +189,7 @@ const towerSprites: Record<string, PixelSprite> = {
       S: "#8b6b3f",
     },
   },
-  archer: {
+  [TOWER_IDS.archer]: {
     pixels: [
       "....xx......",
       "...xGGx.....",
@@ -262,7 +213,7 @@ const towerSprites: Record<string, PixelSprite> = {
       s: "#8b6b3f",
     },
   },
-  blade: {
+  [TOWER_IDS.blade]: {
     pixels: [
       "....xx......",
       "...xRRx.....",
@@ -286,7 +237,7 @@ const towerSprites: Record<string, PixelSprite> = {
       s: "#8b6b3f",
     },
   },
-  warden: {
+  [TOWER_IDS.warden]: {
     pixels: [
       "....xx......",
       "...xSSx.....",
@@ -313,27 +264,10 @@ const towerSprites: Record<string, PixelSprite> = {
   },
 };
 
-const factionProgression: FactionConfig[] = [
-  { id: "humans", name: "Human Vanguard", start: 1, end: 10 },
-  { id: "orcs", name: "Orc Marauders", start: 11, end: 20 },
-  { id: "elves", name: "Elven Raiders", start: 21, end: 30 },
-  { id: "undead", name: "Undead Legion", start: 31, end: 40 },
-  { id: "dwarves", name: "Dwarven Reavers", start: 41, end: 50 },
-  { id: "spirits", name: "Spirit Host", start: 51, end: 60 },
-  { id: "demons", name: "Demonic Horde", start: 61, end: 70 },
-  { id: "dragons", name: "Dragonkin", start: 71, end: 9999 },
-];
-
-const getFactionForWave = (waveNumber: number) =>
-  factionProgression.find((faction) => waveNumber >= faction.start && waveNumber <= faction.end) ??
-  factionProgression[factionProgression.length - 1];
-
 export {
   MIN_TOWER_RANGE,
   assertTowerRanges,
   enemySprites,
-  factionProgression,
-  getFactionForWave,
   grid,
   pathPoints,
   towerSprites,

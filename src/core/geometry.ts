@@ -1,4 +1,4 @@
-import type { Grid } from "./types";
+import type { Grid } from "../types/core/types";
 
 const getTileSize = (canvas: HTMLCanvasElement, grid: Grid) =>
   Math.min(canvas.clientWidth / grid.cols, canvas.clientHeight / grid.rows);

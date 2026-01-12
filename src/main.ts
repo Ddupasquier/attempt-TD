@@ -1,21 +1,36 @@
 import "./style.scss";
-import { createAudioSystem } from "./core/audio";
-import { assertTowerRanges, enemySprites, getFactionForWave, grid, pathPoints, towerSprites, towerTypes } from "./core/data";
-import { getTileSize, screenToGrid } from "./core/geometry";
-import { buildPathTiles } from "./core/path";
-import { createInitialState } from "./core/state";
-import { loadGame, saveGame } from "./core/storage";
-import { BOW_TREE_RANGE_BONUS, isTreeTile } from "./core/terrain";
-import type { GameState, TowerType } from "./core/types";
+import {
+  BOW_TREE_RANGE_BONUS,
+  MAX_TOWER_LEVEL,
+  assertTowerRanges,
+  buildPathTiles,
+  clampTowerLevel,
+  createAudioSystem,
+  createInitialState,
+  enemySprites,
+  getFactionForWave,
+  getTileSize,
+  getTowerStatsAtLevel,
+  getTowerUpgradeCost,
+  grid,
+  isTreeTile,
+  loadGame,
+  pathPoints,
+  saveGame,
+  screenToGrid,
+  tileCenter,
+  towerSprites,
+  towerTypes,
+} from "./core";
+import type { GameState, TowerType } from "./types/core/types";
 import { createPixiRenderer } from "./render/pixiRenderer";
-import { spawnEnemy, updateEnemies } from "./systems/enemies";
+import { isBossWave, spawnBossEnemy, spawnEnemy, updateEnemies } from "./systems/enemies";
 import { updateProjectiles } from "./systems/projectiles";
 import { updateTowers } from "./systems/towers";
 import { startNewWave, updateCountdown, updateWaves } from "./systems/waves";
-import UiRoot from "./ui/UiRoot.svelte";
-import { UI_TEXT } from "./ui/text";
-import { createUiState } from "./ui/uiState";
+import { UiRoot, UI_TEXT, createUiState } from "./ui";
 import { mount } from "svelte";
+import { clamp } from "./utils/math";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const uiRoot = document.getElementById("ui-root");
@@ -40,8 +55,14 @@ let recentRemainingSeconds = 0;
 let dragTowerTypeId: string | null = null;
 let dragPointer: { x: number; y: number } | null = null;
 let isDragging = false;
+let speedIndex = 0;
+
+const SPEED_STEPS = [1, 1.5, 2];
 
 const RANGE_DISPLAY_DURATION = 2.5;
+const UPGRADE_POPUP_WIDTH = 190;
+const UPGRADE_POPUP_HEIGHT = 170;
+const UPGRADE_POPUP_PADDING = 8;
 
 const markStateDirty = () => {
   if (!isLoading) {
@@ -69,6 +90,13 @@ const resizeCanvas = () => {
   renderer.rebuildTerrain(size, grid.cols, grid.rows);
 };
 
+const updateFullscreenLayout = () => {
+  if (typeof document === "undefined") return;
+  const isFullscreen = Boolean(document.fullscreenElement);
+  document.body?.classList.toggle("is-fullscreen", isFullscreen);
+  resizeCanvas();
+};
+
 assertTowerRanges();
 
 const canPlaceTower = (col: number, row: number) => {
@@ -85,6 +113,7 @@ const addTower = (col: number, row: number, type: TowerType, rangeBonus: number)
     type,
     cooldown: 0,
     rangeBonus,
+    level: 0,
   };
   gameState.towers.push(tower);
   markStateDirty();
@@ -117,11 +146,14 @@ const stopTowerDrag = () => {
 
 const uiState = createUiState({
   selectedTowerTypeId: gameState.selectedTower?.id ?? null,
+  selectedTowerPopup: null,
   gold: gameState.gold,
   lives: gameState.lives,
   wave: gameState.wave,
   enemyFactionName: getFactionForWave(gameState.wave).name,
   soundEnabled: gameState.soundEnabled,
+  autoWaveEnabled: gameState.autoWaveEnabled,
+  speedMultiplier: SPEED_STEPS[speedIndex],
   isCountingDown: gameState.isCountingDown,
   countdownRemaining: gameState.countdownRemaining,
   showDefeat: false,
@@ -129,15 +161,69 @@ const uiState = createUiState({
 });
 let ui: ReturnType<typeof mount> | null = null;
 
+const buildSelectedTowerPopup = () => {
+  if (!selectedTowerId) return null;
+  const tower = gameState.towers.find((item) => item.id === selectedTowerId);
+  if (!tower) return null;
+  const size = getTileSize(canvas, grid);
+  const center = tileCenter(tower.col, tower.row, size);
+  const mapWidth = size * grid.cols;
+  const mapHeight = size * grid.rows;
+  const nextLevel = tower.level + 1;
+  const canUpgrade = tower.level < MAX_TOWER_LEVEL;
+  const upgradeCost = canUpgrade ? getTowerUpgradeCost(tower, nextLevel) : 0;
+  const canAfford = canUpgrade && gameState.gold >= upgradeCost;
+  const statsCurrent = getTowerStatsAtLevel(tower, tower.level);
+  const statsNext = canUpgrade ? getTowerStatsAtLevel(tower, nextLevel) : null;
+
+  let x = center.x + size * 0.55;
+  if (x + UPGRADE_POPUP_WIDTH > mapWidth - UPGRADE_POPUP_PADDING) {
+    x = center.x - size * 0.55 - UPGRADE_POPUP_WIDTH;
+  }
+  x = clamp(x, UPGRADE_POPUP_PADDING, mapWidth - UPGRADE_POPUP_WIDTH - UPGRADE_POPUP_PADDING);
+
+  let y = center.y - UPGRADE_POPUP_HEIGHT * 0.5;
+  y = clamp(y, UPGRADE_POPUP_PADDING, mapHeight - UPGRADE_POPUP_HEIGHT - UPGRADE_POPUP_PADDING);
+
+  return {
+    id: tower.id,
+    name: tower.type.name,
+    level: tower.level,
+    maxLevel: MAX_TOWER_LEVEL,
+    x,
+    y,
+    canUpgrade,
+    canAfford,
+    upgradeCost,
+    statsCurrent: {
+      damage: statsCurrent.damage,
+      range: statsCurrent.range,
+      rate: statsCurrent.rate,
+      knockback: statsCurrent.knockback,
+    },
+    statsNext: statsNext
+      ? {
+          damage: statsNext.damage,
+          range: statsNext.range,
+          rate: statsNext.rate,
+          knockback: statsNext.knockback,
+        }
+      : null,
+  };
+};
+
 const updateUI = () => {
   if (!ui) return;
   uiState.set({
     selectedTowerTypeId: gameState.selectedTower?.id ?? null,
+    selectedTowerPopup: buildSelectedTowerPopup(),
     gold: gameState.gold,
     lives: gameState.lives,
     wave: gameState.wave,
     enemyFactionName: getFactionForWave(gameState.wave).name,
     soundEnabled: gameState.soundEnabled,
+    autoWaveEnabled: gameState.autoWaveEnabled,
+    speedMultiplier: SPEED_STEPS[speedIndex],
     isCountingDown: gameState.isCountingDown,
     countdownRemaining: gameState.countdownRemaining,
     showDefeat: isDefeated,
@@ -186,12 +272,37 @@ const initUi = () => {
         markStateDirty();
         updateUI();
       },
+      onToggleAutoWave: () => {
+        gameState.autoWaveEnabled = !gameState.autoWaveEnabled;
+        markStateDirty();
+        updateUI();
+      },
+      onToggleSpeed: () => {
+        speedIndex = (speedIndex + 1) % SPEED_STEPS.length;
+        updateUI();
+      },
       onSelectTower: (towerId: string | null) => {
         setSelectedTower(towerId);
         updateUI();
       },
       onStartDragTower: (towerId: string) => {
         startTowerDrag(towerId);
+        updateUI();
+      },
+      onUpgradeTower: (towerId: string) => {
+        const tower = gameState.towers.find((item) => item.id === towerId);
+        if (!tower) return;
+        if (tower.level >= MAX_TOWER_LEVEL) return;
+        const nextLevel = tower.level + 1;
+        const upgradeCost = getTowerUpgradeCost(tower, nextLevel);
+        if (gameState.gold < upgradeCost) return;
+        gameState.gold -= upgradeCost;
+        tower.level = nextLevel;
+        markStateDirty();
+        updateUI();
+      },
+      onCloseTowerPopup: () => {
+        selectedTowerId = null;
         updateUI();
       },
       onDefeatReset: () => {
@@ -227,6 +338,7 @@ const loadSavedGame = () => {
   gameState.lives = data.lives ?? gameState.lives;
   gameState.wave = data.wave ?? gameState.wave;
   gameState.soundEnabled = data.soundEnabled ?? gameState.soundEnabled;
+  gameState.autoWaveEnabled = data.autoWaveEnabled ?? gameState.autoWaveEnabled;
   gameState.towers = Array.isArray(data.towers)
     ? data.towers
         .map((tower) => {
@@ -239,6 +351,7 @@ const loadSavedGame = () => {
             type,
             cooldown: 0,
             rangeBonus: type.types.includes("Bow") && isTreeTile(tower.col, tower.row, pathTiles) ? BOW_TREE_RANGE_BONUS : 0,
+            level: clampTowerLevel(tower.level ?? 0),
           };
         })
         .filter((tower): tower is NonNullable<typeof tower> => Boolean(tower))
@@ -257,6 +370,7 @@ const loop = (timestamp: number) => {
   }
   const dt = Math.min((timestamp - lastTime) / 1000, 0.05) || 0;
   lastTime = timestamp;
+  const scaledDt = dt * SPEED_STEPS[speedIndex];
   const size = getTileSize(canvas, grid);
   let highlightAlpha = 0;
   let highlightTowerId: string | null = null;
@@ -264,7 +378,7 @@ const loop = (timestamp: number) => {
     highlightTowerId = selectedTowerId;
     highlightAlpha = 1;
   } else if (recentTowerId) {
-    recentRemainingSeconds = Math.max(recentRemainingSeconds - dt, 0);
+    recentRemainingSeconds = Math.max(recentRemainingSeconds - scaledDt, 0);
     highlightAlpha = Math.min(recentRemainingSeconds / RANGE_DISPLAY_DURATION, 1);
     highlightTowerId = recentTowerId;
     if (recentRemainingSeconds === 0) {
@@ -317,11 +431,21 @@ const loop = (timestamp: number) => {
     return;
   }
 
-  updateCountdown(gameState, dt);
-  updateWaves(gameState, dt, (wave) => spawnEnemy(gameState, wave), markStateDirty);
-  updateEnemies(gameState, dt, size, markStateDirty);
-  updateTowers(gameState, dt, size);
-  updateProjectiles(gameState, dt, (towerTypeId) => audio.playDamageSound(towerTypeId, gameState.soundEnabled));
+  updateCountdown(gameState, scaledDt);
+  updateWaves(
+    gameState,
+    scaledDt,
+    (wave) => spawnEnemy(gameState, wave),
+    (wave) => spawnBossEnemy(gameState, wave),
+    isBossWave,
+    markStateDirty,
+  );
+  if (gameState.autoWaveEnabled && !gameState.isCountingDown && gameState.waves.length === 0) {
+    startWave();
+  }
+  updateEnemies(gameState, scaledDt, size, markStateDirty);
+  updateTowers(gameState, scaledDt, size);
+  updateProjectiles(gameState, scaledDt, (towerTypeId) => audio.playDamageSound(towerTypeId, gameState.soundEnabled));
 
   renderer.updateFrame({
     size,
@@ -349,6 +473,8 @@ const startApp = async () => {
   renderer = await createPixiRenderer({ canvas, pathTiles, towerSprites, enemySprites });
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
+  document.addEventListener("fullscreenchange", updateFullscreenLayout);
+  updateFullscreenLayout();
 
   initUi();
 
@@ -377,7 +503,8 @@ const startApp = async () => {
       const { col, row } = screenToGrid(localX, localY, size);
       const tower = towerTypes.find((item) => item.id === dragTowerTypeId);
       if (tower && canPlaceTower(col, row) && gameState.gold >= tower.cost) {
-        const rangeBonus = tower.types.includes("Bow") && isTreeTile(col, row, pathTiles) ? BOW_TREE_RANGE_BONUS : 0;
+        const rangeBonus =
+          tower.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? BOW_TREE_RANGE_BONUS : 0;
         const placedTower = addTower(col, row, tower, rangeBonus);
         gameState.gold -= tower.cost;
         recentTowerId = placedTower.id;

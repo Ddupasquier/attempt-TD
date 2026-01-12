@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PixelSprite, TowerType } from "../../core/types";
+  import type { PixelSprite, TowerType } from "../../types/core/types";
   import { UI_TEXT } from "../text";
   import TowerCard from "./TowerCard.svelte";
 
@@ -24,8 +24,7 @@
   <div class="hud-header">
     <div class="title">{UI_TEXT.appTitle}</div>
     <div class="stats">{UI_TEXT.stats(gold, lives, wave)}</div>
-    <!-- svelte-ignore event_directive_deprecated -->
-    <button class="hud-toggle" type="button" on:click={onToggle}>{toggleLabel}</button>
+    <button class="hud-toggle" type="button" onclick={onToggle}>{toggleLabel}</button>
   </div>
   <div class="hud hud-body" class:is-collapsed={isCollapsed}>
     <div class="hud-section">

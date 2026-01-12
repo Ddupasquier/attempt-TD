@@ -1,14 +1,6 @@
 <script lang="ts">
-  import type { PixelSprite, TowerType } from "../../core/types";
   import { spriteCanvas } from "../spriteCanvas";
-
-  type TowerCardProps = {
-    tower: TowerType;
-    sprite: PixelSprite | undefined;
-    isActive: boolean;
-    onSelect: (towerId: string | null) => void;
-    onStartDrag: (towerId: string) => void;
-  };
+  import type { TowerCardProps } from "../../types/ui/components/TowerCard.types";
 
   const { tower, sprite, isActive, onSelect, onStartDrag } = $props() as TowerCardProps;
 
@@ -56,13 +48,12 @@
   };
 </script>
 
-<!-- svelte-ignore event_directive_deprecated -->
 <button
   class="tower-card"
   class:active={isActive}
   type="button"
-  on:click={handleClick}
-  on:pointerdown={handlePointerDown}
+  onclick={handleClick}
+  onpointerdown={handlePointerDown}
 >
   <canvas class="tower-sprite" width="36" height="36" use:spriteCanvas={sprite ?? null}></canvas>
   <div class="tower-card__content">

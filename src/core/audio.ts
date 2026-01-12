@@ -1,17 +1,13 @@
-type ToneConfig = {
-  freq: number;
-  duration: number;
-  type: OscillatorType;
-  gain: number;
-};
+import { TOWER_IDS } from "../constants/towerIds";
+import type { ToneConfig } from "../types/core/audioTypes";
 
 const createAudioSystem = () => {
   let audioCtx: AudioContext | null = null;
 
   const tonePresets: Record<string, Omit<ToneConfig, "duration">> = {
-    mage: { freq: 520, type: "triangle", gain: 0.06 },
-    archer: { freq: 740, type: "square", gain: 0.05 },
-    blade: { freq: 360, type: "square", gain: 0.07 },
+    [TOWER_IDS.mage]: { freq: 520, type: "triangle", gain: 0.06 },
+    [TOWER_IDS.archer]: { freq: 740, type: "square", gain: 0.05 },
+    [TOWER_IDS.blade]: { freq: 360, type: "square", gain: 0.07 },
   };
 
   const ensureAudioContext = () => {

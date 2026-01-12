@@ -1,4 +1,4 @@
-import type { GameState } from "./types";
+import type { GameState } from "../types/core/types";
 
 const createInitialState = (): GameState => ({
   gold: 140,
@@ -13,6 +13,7 @@ const createInitialState = (): GameState => ({
   countdownRemaining: 0,
   elapsed: 0,
   soundEnabled: true,
+  autoWaveEnabled: false,
 });
 
 export { createInitialState };

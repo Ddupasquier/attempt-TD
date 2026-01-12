@@ -1,7 +1,7 @@
 import type { GameState } from "../types/core/types";
 import { GAME_CONFIG } from "../core/config";
 import { TOWER_IDS } from "../constants/towerIds";
-import { getCatapultDamagePopupStyle } from "../core/isDev";
+import { getCatapultDamagePopupStyle } from "../core/devFlags";
 
 const updateProjectiles = (
   state: GameState,
@@ -60,14 +60,14 @@ const updateProjectiles = (
         bolt.target.hp -= bolt.damage;
         if (bolt.target.x !== undefined && bolt.target.y !== undefined) {
           const style =
-            bolt.towerTypeId === TOWER_IDS.catapult ? getCatapultDamagePopupStyle() : {};
+            bolt.towerTypeId === TOWER_IDS.catapult ? getCatapultDamagePopupStyle() : undefined;
           pushDamagePopup(
             bolt.target.x,
             bolt.target.y,
             Math.round(bolt.damage),
-            style.color,
-            style.duration ?? 0.6,
-            style.sizeMult ?? 1,
+            style?.color,
+            style?.duration ?? 0.6,
+            style?.sizeMult ?? 1,
           );
         }
       } else if (bolt.splashRadius) {
@@ -81,14 +81,14 @@ const updateProjectiles = (
           const damage = bolt.damage * falloff;
           enemy.hp -= damage;
           const style =
-            bolt.towerTypeId === TOWER_IDS.catapult ? getCatapultDamagePopupStyle() : {};
+            bolt.towerTypeId === TOWER_IDS.catapult ? getCatapultDamagePopupStyle() : undefined;
           pushDamagePopup(
             enemy.x,
             enemy.y,
             Math.round(damage),
-            style.color,
-            style.duration ?? 0.6,
-            style.sizeMult ?? 1,
+            style?.color,
+            style?.duration ?? 0.6,
+            style?.sizeMult ?? 1,
           );
         }
         state.effects.push({

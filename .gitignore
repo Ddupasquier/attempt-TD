@@ -6,3 +6,4 @@ yarn-error.log*
 style.css.map
 dist/style.css.map
 dist/
+src/core/isDev.ts

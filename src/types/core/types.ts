@@ -19,6 +19,8 @@ type Tower = {
   cooldown: number;
   rangeBonus: number;
   level: number;
+  targetCol?: number;
+  targetRow?: number;
 };
 
 type FactionId =
@@ -67,7 +69,9 @@ type EnemyType = "skirmisher" | "raider" | "bruiser" | "bulwark" | "elite" | "bo
 type Projectile = {
   x: number;
   y: number;
-  target: Enemy;
+  target?: Enemy;
+  targetX?: number;
+  targetY?: number;
   speed: number;
   damage: number;
   color: string;
@@ -76,6 +80,7 @@ type Projectile = {
   originY: number;
   maxRange: number;
   knockbackDistance: number;
+  splashRadius?: number;
 };
 
 type FactionConfig = {
@@ -98,6 +103,7 @@ type GameState = {
   towers: Tower[];
   enemies: Enemy[];
   projectiles: Projectile[];
+  effects: SplashEffect[];
   selectedTower: TowerType | null;
   waves: WaveState[];
   isCountingDown: boolean;
@@ -107,6 +113,14 @@ type GameState = {
   autoWaveEnabled: boolean;
 };
 
+type SplashEffect = {
+  x: number;
+  y: number;
+  radius: number;
+  time: number;
+  duration: number;
+};
+
 type SaveData = {
   gold: number;
   lives: number;
@@ -114,7 +128,7 @@ type SaveData = {
   soundEnabled: boolean;
   autoWaveEnabled?: boolean;
   selectedTowerId: string | null;
-  towers: Array<{ col: number; row: number; typeId: string; level?: number }>;
+  towers: Array<{ col: number; row: number; typeId: string; level?: number; targetCol?: number; targetRow?: number }>;
 };
 
 type PixelSprite = {
@@ -132,6 +146,7 @@ export type {
   PixelSprite,
   Projectile,
   SaveData,
+  SplashEffect,
   Tower,
   TowerType,
   WaveState,

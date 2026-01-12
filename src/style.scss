@@ -558,6 +558,12 @@ button + button {
   color: var(--accent);
 }
 
+.tower-upgrade__target {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.78);
+  margin-top: 2px;
+}
+
 .tower-upgrade__stats {
   display: grid;
   gap: 3px;
@@ -581,4 +587,11 @@ button + button {
   padding: 7px;
   font-size: 0.55rem;
   border-radius: 10px;
+}
+
+.tower-upgrade__button--danger {
+  background: linear-gradient(180deg, #e87a6b 0%, #b94b3e 100%);
+  border-color: #642a23;
+  box-shadow: 0 6px 0 #6c2f27;
+  color: #2b1310;
 }

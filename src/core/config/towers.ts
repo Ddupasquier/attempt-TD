@@ -63,6 +63,18 @@ const TOWER_CONFIG = {
       color: "#7aa6c9",
       description: "Shield bash, knocks foes back.",
     },
+    {
+      id: TOWER_IDS.catapult,
+      name: "Catapult",
+      types: ["Siege", "Ranged"],
+      cost: 140,
+      range: 6.5,
+      rate: 3.5,
+      damage: 55,
+      knockback: 0,
+      color: "#c58b5a",
+      description: "Lobs massive shots at a fixed target.",
+    },
   ],
 };
 

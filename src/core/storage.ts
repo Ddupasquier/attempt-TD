@@ -15,6 +15,8 @@ const saveGame = (state: GameState) => {
       row: tower.row,
       typeId: tower.type.id,
       level: tower.level,
+      targetCol: tower.targetCol,
+      targetRow: tower.targetRow,
     })),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

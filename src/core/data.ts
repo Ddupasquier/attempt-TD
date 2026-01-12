@@ -211,6 +211,29 @@ const towerSprites: Record<string, PixelSprite> = {
       t: "#8b6b3f",
     },
   },
+  [TOWER_IDS.catapult]: {
+    pixels: [
+      "....xx......",
+      "...xTTx.....",
+      "..xTTTTx....",
+      ".xTttTTTx...",
+      ".xTTTTTTx...",
+      "..xTTTTx....",
+      "..xCCccCx...",
+      ".xCCCCCCx...",
+      ".xCCccCCx...",
+      "xCCCCCCCCx..",
+      "xCCcCCxCCx..",
+      ".xCCCCCCx...",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      T: "#6b4d2e",
+      t: "#8a6b42",
+      C: "#b07a4a",
+      c: "#8b6b3f",
+    },
+  },
 };
 
 export {

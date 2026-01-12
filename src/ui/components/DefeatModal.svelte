@@ -1,12 +1,19 @@
 <script lang="ts">
   import Modal from "./Modal.svelte";
   import { UI_TEXT } from "../text";
+  import type { DefeatModalProps } from "../../types/ui/components/DefeatModal.types";
 
-  const { isOpen, onReset } = $props();
+  const { isOpen, onReset } = $props<DefeatModalProps>();
 </script>
 
 <Modal isOpen={isOpen} titleId="defeatTitle">
-  <span slot="title">{UI_TEXT.defeatTitle}</span>
-  <span slot="message">{UI_TEXT.defeatMessage}</span>
-  <button slot="actions" type="button" onclick={onReset}>{UI_TEXT.defeatReset}</button>
+  {#snippet title()}
+    <span>{UI_TEXT.defeatTitle}</span>
+  {/snippet}
+  {#snippet message()}
+    <span>{UI_TEXT.defeatMessage}</span>
+  {/snippet}
+  {#snippet actions()}
+    <button type="button" onclick={onReset}>{UI_TEXT.defeatReset}</button>
+  {/snippet}
 </Modal>

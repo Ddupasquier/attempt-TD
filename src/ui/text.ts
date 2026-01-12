@@ -10,6 +10,12 @@ const UI_TEXT = {
   upgradeTitle: "Tower Upgrade",
   upgradePrompt: "Level up this tower?",
   upgradeButton: "Upgrade",
+  catapultSetTargetLabel: "Set Target",
+  catapultSetTargetAria: "Set catapult target",
+  catapultTargetLabel: (col?: number, row?: number) =>
+    col !== undefined && row !== undefined ? `Target: (${col + 1}, ${row + 1})` : "Target: none",
+  removeTowerLabel: "Remove Tower",
+  removeTowerAria: "Remove tower",
   upgradeMax: "Max level reached",
   upgradeCost: (cost: number) => `Cost: ${cost}g`,
   upgradeLevel: (level: number, max: number) => `Level ${level}/${max}`,

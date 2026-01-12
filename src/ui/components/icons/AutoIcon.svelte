@@ -1,8 +1,7 @@
 <script lang="ts">
-  const { size = 18, strokeWidth = 1.8 } = $props() as {
-    size?: number;
-    strokeWidth?: number;
-  };
+  import type { AutoIconProps } from "../../../types/ui/components/icons/AutoIcon.types";
+
+  const { size = 18, strokeWidth = 1.8 } = $props<AutoIconProps>();
 </script>
 
 <svg viewBox="0 0 24 24" aria-hidden="true" width={size} height={size}

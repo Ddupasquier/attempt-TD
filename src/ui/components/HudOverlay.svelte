@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { PixelSprite, TowerType } from "../../types/core/types";
   import { UI_TEXT } from "../text";
   import TowerCard from "./TowerCard.svelte";
+  import type { HudOverlayProps } from "../../types/ui/components/HudOverlay.types";
 
   const {
     towerTypes,
@@ -15,7 +15,7 @@
     onToggle,
     onSelectTower,
     onStartDragTower,
-  } = $props();
+  } = $props<HudOverlayProps>();
 
   const toggleLabel = $derived(isCollapsed ? UI_TEXT.hudFabLabel : UI_TEXT.hudToggleHide);
 </script>

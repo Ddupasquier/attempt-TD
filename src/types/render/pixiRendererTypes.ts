@@ -15,9 +15,21 @@ type FrameData = {
   towers: Tower[];
   enemies: Enemy[];
   projectiles: Projectile[];
+  effects: {
+    x: number;
+    y: number;
+    radius: number;
+    time: number;
+    duration: number;
+  }[];
   highlightedTowerId: string | null;
   highlightAlpha: number;
   dragPreview?: DragPreview;
+  targetIndicator?: {
+    x: number;
+    y: number;
+    alpha?: number;
+  };
 };
 
 type RendererOptions = {

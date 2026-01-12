@@ -1,5 +1,7 @@
 <script lang="ts">
-  const { size = 18, isExit = false } = $props<{ size?: number; isExit?: boolean }>();
+  import type { FullscreenIconProps } from "../../../types/ui/components/icons/FullscreenIcon.types";
+
+  const { size = 18, isExit = false } = $props<FullscreenIconProps>();
 </script>
 
 <svg viewBox="0 0 24 24" aria-hidden="true" width={size} height={size}>

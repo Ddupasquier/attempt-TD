@@ -3,6 +3,7 @@ const TOWER_IDS = {
   archer: "archer",
   blade: "blade",
   warden: "warden",
+  catapult: "catapult",
 } as const;
 
 export { TOWER_IDS };

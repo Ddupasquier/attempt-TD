@@ -1,5 +1,7 @@
 <script lang="ts">
-  const { size = 18, strokeWidth = 1.8 } = $props() as { size?: number; strokeWidth?: number };
+  import type { ResetIconProps } from "../../../types/ui/components/icons/ResetIcon.types";
+
+  const { size = 18, strokeWidth = 1.8 } = $props<ResetIconProps>();
 </script>
 
 <svg viewBox="0 0 24 24" aria-hidden="true" width={size} height={size}>

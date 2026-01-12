@@ -1,5 +1,7 @@
 <script lang="ts">
-  const { size = 18 } = $props() as { size?: number };
+  import type { PlayIconProps } from "../../../types/ui/components/icons/PlayIcon.types";
+
+  const { size = 18 } = $props<PlayIconProps>();
 </script>
 
 <svg viewBox="0 0 24 24" aria-hidden="true" width={size} height={size}>

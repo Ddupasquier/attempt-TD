@@ -7,27 +7,52 @@ const updateProjectiles = (
 ) => {
   for (let i = state.projectiles.length - 1; i >= 0; i -= 1) {
     const bolt = state.projectiles[i];
-    if (!bolt.target || bolt.target.hp <= 0) {
+    if (!bolt.target && bolt.targetX === undefined) {
       state.projectiles.splice(i, 1);
       continue;
     }
-    if (bolt.target.x === undefined || bolt.target.y === undefined) {
+    if (bolt.target && bolt.target.hp <= 0) {
       state.projectiles.splice(i, 1);
       continue;
     }
-    const rangeDx = bolt.target.x - bolt.originX;
-    const rangeDy = bolt.target.y - bolt.originY;
+    if (bolt.target && (bolt.target.x === undefined || bolt.target.y === undefined)) {
+      state.projectiles.splice(i, 1);
+      continue;
+    }
+    const targetX = bolt.target ? bolt.target.x ?? bolt.x : bolt.targetX ?? bolt.x;
+    const targetY = bolt.target ? bolt.target.y ?? bolt.y : bolt.targetY ?? bolt.y;
+    const rangeDx = targetX - bolt.originX;
+    const rangeDy = targetY - bolt.originY;
     if (Math.hypot(rangeDx, rangeDy) > bolt.maxRange) {
       state.projectiles.splice(i, 1);
       continue;
     }
-    const dx = bolt.target.x - bolt.x;
-    const dy = bolt.target.y - bolt.y;
+    const dx = targetX - bolt.x;
+    const dy = targetY - bolt.y;
     const dist = Math.hypot(dx, dy);
     const step = bolt.speed * dt;
     if (dist <= step) {
-      bolt.target.hp -= bolt.damage;
-      if (bolt.knockbackDistance > 0) {
+      if (bolt.target) {
+        bolt.target.hp -= bolt.damage;
+      } else if (bolt.splashRadius) {
+        for (const enemy of state.enemies) {
+          if (enemy.x === undefined || enemy.y === undefined) continue;
+          const sx = enemy.x - targetX;
+          const sy = enemy.y - targetY;
+          const sdist = Math.hypot(sx, sy);
+          if (sdist > bolt.splashRadius) continue;
+          const falloff = Math.max(0, 1 - sdist / bolt.splashRadius);
+          enemy.hp -= bolt.damage * falloff;
+        }
+        state.effects.push({
+          x: targetX,
+          y: targetY,
+          radius: bolt.splashRadius,
+          time: 0,
+          duration: 0.35,
+        });
+      }
+      if (bolt.target && bolt.knockbackDistance > 0) {
         let directionX = 0;
         let directionY = 0;
         if (bolt.target.vx !== undefined && bolt.target.vy !== undefined) {

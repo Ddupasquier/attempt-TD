@@ -2,7 +2,7 @@
   import { spriteCanvas } from "../spriteCanvas";
   import type { TowerCardProps } from "../../types/ui/components/TowerCard.types";
 
-  const { tower, sprite, isActive, onSelect, onStartDrag } = $props() as TowerCardProps;
+  const { tower, sprite, isActive, onSelect, onStartDrag } = $props<TowerCardProps>();
 
   const dragThreshold = 6;
   let suppressClick = false;

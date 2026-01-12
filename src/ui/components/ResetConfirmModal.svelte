@@ -7,10 +7,14 @@
 </script>
 
 <Modal isOpen={isOpen} titleId="resetTitle">
-  <span slot="title">{UI_TEXT.resetConfirmTitle}</span>
-  <span slot="message">{UI_TEXT.resetConfirmMessage}</span>
-  <svelte:fragment slot="actions">
+  {#snippet title()}
+    <span>{UI_TEXT.resetConfirmTitle}</span>
+  {/snippet}
+  {#snippet message()}
+    <span>{UI_TEXT.resetConfirmMessage}</span>
+  {/snippet}
+  {#snippet actions()}
     <button type="button" onclick={onConfirm}>{UI_TEXT.resetConfirmConfirm}</button>
     <button type="button" onclick={onCancel}>{UI_TEXT.resetConfirmCancel}</button>
-  </svelte:fragment>
+  {/snippet}
 </Modal>

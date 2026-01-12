@@ -18,6 +18,8 @@
     onSelectTower,
     onStartDragTower,
     onUpgradeTower,
+    onDeleteTower,
+    onSetTowerTarget,
     onCloseTowerPopup,
     onDefeatReset,
   } = $props<UiRootProps>();
@@ -72,7 +74,11 @@
   {#if $uiState.selectedTowerPopup}
     <TowerUpgradePopup
       popup={$uiState.selectedTowerPopup}
+      boundsWidth={$uiState.mapWidth}
+      boundsHeight={$uiState.mapHeight}
       onUpgrade={onUpgradeTower}
+      onDelete={onDeleteTower}
+      onSetTarget={onSetTowerTarget}
       onClose={onCloseTowerPopup}
     />
   {/if}

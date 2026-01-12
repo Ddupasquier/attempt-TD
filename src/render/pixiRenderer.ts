@@ -3,6 +3,7 @@ import { getTerrainFeatureAtTile } from "../core/terrain";
 import { tileCenter } from "../core/geometry";
 import { getTowerStats, MAX_TOWER_LEVEL } from "../core/towerLevels";
 import type { Enemy, Projectile, Tower } from "../types/core/types";
+import { TOWER_IDS } from "../constants/towerIds";
 import type { FrameData, RendererOptions } from "../types/render/pixiRendererTypes";
 
 const hash = (col: number, row: number, salt: number) => {
@@ -349,7 +350,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
     }
   };
 
-  const updateProjectiles = (projectiles: Projectile[]) => {
+  const updateProjectiles = (size: number, projectiles: Projectile[]) => {
     while (projectilePool.length < projectiles.length) {
       const sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
       projectilesLayer.addChild(sprite);
@@ -360,9 +361,20 @@ const createPixiRenderer = async (options: RendererOptions) => {
       const sprite = projectilePool[index];
       sprite.visible = true;
       sprite.tint = hexToNumber(bolt.color);
-      sprite.width = 3;
-      sprite.height = 3;
-      sprite.position.set(bolt.x - 1.5, bolt.y - 1.5);
+      let sizePx = 3;
+      if (bolt.towerTypeId === TOWER_IDS.catapult) {
+        const targetX = bolt.targetX ?? bolt.x;
+        const targetY = bolt.targetY ?? bolt.y;
+        const totalDist = Math.hypot(targetX - bolt.originX, targetY - bolt.originY);
+        const remaining = Math.hypot(targetX - bolt.x, targetY - bolt.y);
+        const progress = totalDist > 0 ? 1 - remaining / totalDist : 1;
+        const tri = 1 - Math.abs(progress * 2 - 1);
+        const base = Math.max(5, size * 0.16);
+        sizePx = base * (1 + tri * 2.0);
+      }
+      sprite.width = sizePx;
+      sprite.height = sizePx;
+      sprite.position.set(bolt.x - sizePx * 0.5, bolt.y - sizePx * 0.5);
     });
 
     for (let i = projectiles.length; i < projectilePool.length; i += 1) {
@@ -373,6 +385,30 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const updateOverlay = (frame: FrameData) => {
     overlayGraphics.clear();
     overlayDragSprite.visible = false;
+    if (frame.effects.length > 0) {
+      for (const effect of frame.effects) {
+        const progress = Math.min(1, Math.max(0, effect.time / effect.duration));
+        const alpha = 0.7 * (1 - progress);
+        const radius = effect.radius * (0.6 + progress * 0.6);
+        overlayGraphics
+          .circle(effect.x, effect.y, radius)
+          .stroke({ width: Math.max(1, frame.size * 0.03), color: 0x2b1f14, alpha });
+      }
+    }
+    if (frame.targetIndicator) {
+      const strokeWidth = Math.max(1.5, frame.size * 0.05);
+      const arm = frame.size * 0.25;
+      const alpha = frame.targetIndicator.alpha ?? 0.9;
+      overlayGraphics
+        .moveTo(frame.targetIndicator.x - arm, frame.targetIndicator.y)
+        .lineTo(frame.targetIndicator.x + arm, frame.targetIndicator.y)
+        .moveTo(frame.targetIndicator.x, frame.targetIndicator.y - arm)
+        .lineTo(frame.targetIndicator.x, frame.targetIndicator.y + arm)
+        .stroke({ width: strokeWidth, color: 0xff3b30, alpha });
+      overlayGraphics
+        .circle(frame.targetIndicator.x, frame.targetIndicator.y, frame.size * 0.18)
+        .stroke({ width: Math.max(1, frame.size * 0.03), color: 0xff3b30, alpha: alpha * 0.8 });
+    }
     if (frame.highlightedTowerId && frame.highlightAlpha > 0) {
       const tower = frame.towers.find((item) => item.id === frame.highlightedTowerId);
       if (tower) {
@@ -406,7 +442,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const updateFrame = (frame: FrameData) => {
     updateTowers(frame.size, frame.towers);
     updateEnemies(frame.size, frame.enemies);
-    updateProjectiles(frame.projectiles);
+    updateProjectiles(frame.size, frame.projectiles);
     updateOverlay(frame);
   };
 

@@ -8,6 +8,7 @@ const createInitialState = (): GameState => ({
   towers: [],
   enemies: [],
   projectiles: [],
+  effects: [],
   selectedTower: null,
   waves: [],
   isCountingDown: false,

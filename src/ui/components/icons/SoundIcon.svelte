@@ -1,5 +1,7 @@
 <script lang="ts">
-  const { size = 18 } = $props() as { size?: number };
+  import type { SoundIconProps } from "../../../types/ui/components/icons/SoundIcon.types";
+
+  const { size = 18 } = $props<SoundIconProps>();
 </script>
 
 <svg viewBox="0 0 24 24" aria-hidden="true" width={size} height={size}>

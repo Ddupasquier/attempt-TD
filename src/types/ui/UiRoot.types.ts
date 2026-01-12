@@ -14,6 +14,8 @@ type UiRootProps = {
   onSelectTower: (towerId: string | null) => void;
   onStartDragTower: (towerId: string) => void;
   onUpgradeTower: (towerId: string) => void;
+  onDeleteTower: (towerId: string) => void;
+  onSetTowerTarget: (towerId: string) => void;
   onCloseTowerPopup: () => void;
   onDefeatReset: () => void;
 };

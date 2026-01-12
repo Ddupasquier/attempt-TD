@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
+  import FloatingPanel from "./FloatingPanel.svelte";
   import { UI_TEXT } from "../text";
+  import { TOWER_IDS } from "../../constants/towerIds";
   import type { TowerUpgradePopupProps } from "../../types/ui/components/TowerUpgradePopup.types";
 
-  const { popup, onUpgrade, onClose } = $props<TowerUpgradePopupProps>();
-
-  let rootElement: HTMLDivElement | null = null;
+  const { popup, boundsWidth, boundsHeight, onUpgrade, onDelete, onSetTarget, onClose } =
+    $props<TowerUpgradePopupProps>();
 
   const formatStat = (value: number) => {
     if (Number.isInteger(value)) return value.toFixed(0);
@@ -16,10 +17,20 @@
     onUpgrade(popup.id);
   };
 
+  const handleDelete = () => {
+    onDelete(popup.id);
+    onClose();
+  };
+
+  const handleSetTarget = () => {
+    onSetTarget(popup.id);
+    onClose();
+  };
+
   onMount(() => {
     const handleOutsidePointer = (event: PointerEvent) => {
-      if (!rootElement) return;
-      if (rootElement.contains(event.target as Node)) return;
+      const panel = (event.target as Node | null)?.closest(".tower-upgrade");
+      if (panel) return;
       onClose();
     };
     document.addEventListener("pointerdown", handleOutsidePointer);
@@ -28,15 +39,14 @@
     };
   });
 
-  onDestroy(() => {
-    rootElement = null;
-  });
 </script>
 
-<div
-  class="tower-upgrade"
-  bind:this={rootElement}
-  style={`left: ${popup.x}px; top: ${popup.y}px;`}
+<FloatingPanel
+  x={popup.x}
+  y={popup.y}
+  boundsWidth={boundsWidth}
+  boundsHeight={boundsHeight}
+  className="tower-upgrade"
 >
   <div class="tower-upgrade__header">
     <div class="tower-upgrade__title">{UI_TEXT.upgradeTitle}</div>
@@ -47,6 +57,11 @@
     <div class="tower-upgrade__cost">
       {popup.canUpgrade ? UI_TEXT.upgradeCost(popup.upgradeCost) : UI_TEXT.upgradeMax}
     </div>
+    {#if popup.typeId === TOWER_IDS.catapult}
+      <div class="tower-upgrade__target">
+        {UI_TEXT.catapultTargetLabel(popup.targetCol, popup.targetRow)}
+      </div>
+    {/if}
     <div class="tower-upgrade__stats">
       <div class="tower-upgrade__stat">
         <span>{UI_TEXT.statDamage}</span>
@@ -86,4 +101,22 @@
   >
     {UI_TEXT.upgradeButton}
   </button>
-</div>
+  {#if popup.typeId === TOWER_IDS.catapult}
+    <button
+      class="tower-upgrade__button"
+      type="button"
+      aria-label={UI_TEXT.catapultSetTargetAria}
+      onclick={handleSetTarget}
+    >
+      {UI_TEXT.catapultSetTargetLabel}
+    </button>
+  {/if}
+  <button
+    class="tower-upgrade__button tower-upgrade__button--danger"
+    type="button"
+    aria-label={UI_TEXT.removeTowerAria}
+    onclick={handleDelete}
+  >
+    {UI_TEXT.removeTowerLabel}
+  </button>
+</FloatingPanel>

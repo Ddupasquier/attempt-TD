@@ -12,13 +12,18 @@ type UiState = {
   countdownRemaining: number;
   showDefeat: boolean;
   isDragging: boolean;
+  mapWidth: number;
+  mapHeight: number;
 };
 
 type TowerUpgradePopup = {
   id: string;
+  typeId: string;
   name: string;
   level: number;
   maxLevel: number;
+  targetCol?: number;
+  targetRow?: number;
   x: number;
   y: number;
   canUpgrade: boolean;

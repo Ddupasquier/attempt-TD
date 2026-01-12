@@ -1,6 +1,6 @@
 import "./style.scss";
 import {
-  BOW_TREE_RANGE_BONUS,
+  RANGED_TREE_RANGE_BONUS,
   MAX_TOWER_LEVEL,
   assertTowerRanges,
   buildPathTiles,
@@ -410,7 +410,10 @@ const loadSavedGame = () => {
             row: tower.row,
             type,
             cooldown: 0,
-            rangeBonus: type.types.includes("Ranged") && isTreeTile(tower.col, tower.row, pathTiles) ? BOW_TREE_RANGE_BONUS : 0,
+            rangeBonus:
+              type.types.includes("Ranged") && isTreeTile(tower.col, tower.row, pathTiles)
+                ? RANGED_TREE_RANGE_BONUS
+                : 0,
             level: clampTowerLevel(tower.level ?? 0),
             targetCol: tower.targetCol,
             targetRow: tower.targetRow,
@@ -459,10 +462,13 @@ const loop = (timestamp: number) => {
           }
           const tower = towerTypes.find((item) => item.id === dragTowerTypeId);
           if (!tower) return null;
+          const { col, row } = screenToGrid(localX, localY, size);
+          const rangeBonus =
+            tower.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? RANGED_TREE_RANGE_BONUS : 0;
           return {
             x: localX,
             y: localY,
-            range: tower.range,
+            range: tower.range + rangeBonus,
             color: tower.color,
             spriteId: tower.id,
           };
@@ -601,8 +607,8 @@ const startApp = async () => {
       const { col, row } = screenToGrid(localX, localY, size);
       const tower = towerTypes.find((item) => item.id === dragTowerTypeId);
       if (tower && canPlaceTower(col, row) && gameState.gold >= tower.cost) {
-        const rangeBonus =
-          tower.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? BOW_TREE_RANGE_BONUS : 0;
+          const rangeBonus =
+            tower.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? RANGED_TREE_RANGE_BONUS : 0;
         const placedTower = addTower(col, row, tower, rangeBonus);
         gameState.gold -= tower.cost;
         recentTowerId = placedTower.id;

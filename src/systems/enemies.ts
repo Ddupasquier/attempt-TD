@@ -180,7 +180,8 @@ const updateEnemies = (
     const enemy = state.enemies[i];
     if (enemy.reachedEnd) {
       state.enemies.splice(i, 1);
-      state.lives -= 1;
+      const lifeLoss = enemy.type === "boss" || enemy.isBoss ? 3 : 1;
+      state.lives = Math.max(0, state.lives - lifeLoss);
       const wave = state.waves.find((item) => item.id === enemy.waveId);
       if (wave) {
         wave.remainingEnemies = Math.max(0, wave.remainingEnemies - 1);

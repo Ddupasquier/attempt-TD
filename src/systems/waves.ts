@@ -49,7 +49,8 @@ const updateWaves = (
     }
     if (wave.spawnIndex >= wave.totalSpawns && wave.remainingEnemies <= 0) {
       if (!wave.livesLost) {
-        state.lives = Math.min(state.maxLives, state.lives + 1);
+        const lifeGain = isBossWave(wave.waveNumber) ? 3 : 1;
+        state.lives = Math.min(state.maxLives, state.lives + lifeGain);
       }
       state.waves.splice(i, 1);
       state.gold += GAME_CONFIG.wave.waveReward;

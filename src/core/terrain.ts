@@ -31,6 +31,6 @@ const getTerrainFeatureAtTile = (col: number, row: number, pathTiles: Set<string
 const isTreeTile = (col: number, row: number, pathTiles: Set<string>) =>
   getTerrainFeatureAtTile(col, row, pathTiles).type === "tree";
 
-const BOW_TREE_RANGE_BONUS = 0.4;
+const RANGED_TREE_RANGE_BONUS = 0.4;
 
-export { BOW_TREE_RANGE_BONUS, getTerrainFeatureAtTile, isTreeTile };
+export { RANGED_TREE_RANGE_BONUS, getTerrainFeatureAtTile, isTreeTile };

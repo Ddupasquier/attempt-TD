@@ -61,9 +61,9 @@ const updateProjectiles = (
         if (bolt.target.x !== undefined && bolt.target.y !== undefined) {
           const style = bolt.isCrit
             ? {
-                color: "#7a0b0b",
-                duration: 0.85,
-                sizeMult: 1.25,
+                color: "#d60000",
+                duration: 1.1,
+                sizeMult: 1.4,
               }
             : bolt.towerTypeId === TOWER_IDS.catapult
               ? getCatapultDamagePopupStyle()
@@ -89,9 +89,9 @@ const updateProjectiles = (
           enemy.hp -= damage;
           const style = bolt.isCrit
             ? {
-                color: "#7a0b0b",
-                duration: 0.85,
-                sizeMult: 1.25,
+                color: "#d60000",
+                duration: 1.1,
+                sizeMult: 1.4,
               }
             : bolt.towerTypeId === TOWER_IDS.catapult
               ? getCatapultDamagePopupStyle()

@@ -471,6 +471,11 @@ const createPixiRenderer = async (options: RendererOptions) => {
       const rise = size * 0.35 * progress;
       text.visible = true;
       text.text = `${popup.value}`;
+      if (popup.color) {
+        text.style.fill = popup.color;
+      } else {
+        text.style.fill = "#1b1b1b";
+      }
       text.alpha = 0.7 * (1 - progress);
       text.style.fontSize = Math.max(10, size * 0.26);
       text.position.set(popup.x, popup.y - rise);

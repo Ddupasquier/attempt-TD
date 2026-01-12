@@ -18,6 +18,8 @@ const getTowerStatsAtLevel = (tower: Tower, level: number) => {
     range: baseRange * stats.rangeMult,
     rate: tower.type.rate * stats.rateMult,
     damage: tower.type.damage * stats.damageMult,
+    critChance: tower.type.critChance,
+    critMultiplier: tower.type.critMultiplier,
     knockback: tower.type.knockback * stats.knockbackMult,
   };
 };

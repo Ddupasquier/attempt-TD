@@ -59,8 +59,15 @@ const updateProjectiles = (
       if (bolt.target) {
         bolt.target.hp -= bolt.damage;
         if (bolt.target.x !== undefined && bolt.target.y !== undefined) {
-          const style =
-            bolt.towerTypeId === TOWER_IDS.catapult ? getCatapultDamagePopupStyle() : undefined;
+          const style = bolt.isCrit
+            ? {
+                color: "#7a0b0b",
+                duration: 0.85,
+                sizeMult: 1.25,
+              }
+            : bolt.towerTypeId === TOWER_IDS.catapult
+              ? getCatapultDamagePopupStyle()
+              : undefined;
           pushDamagePopup(
             bolt.target.x,
             bolt.target.y,
@@ -80,8 +87,15 @@ const updateProjectiles = (
           const falloff = Math.max(0, 1 - sdist / bolt.splashRadius);
           const damage = bolt.damage * falloff;
           enemy.hp -= damage;
-          const style =
-            bolt.towerTypeId === TOWER_IDS.catapult ? getCatapultDamagePopupStyle() : undefined;
+          const style = bolt.isCrit
+            ? {
+                color: "#7a0b0b",
+                duration: 0.85,
+                sizeMult: 1.25,
+              }
+            : bolt.towerTypeId === TOWER_IDS.catapult
+              ? getCatapultDamagePopupStyle()
+              : undefined;
           pushDamagePopup(
             enemy.x,
             enemy.y,

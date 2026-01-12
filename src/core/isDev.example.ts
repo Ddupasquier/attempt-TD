@@ -1,4 +1,4 @@
-const IS_DEV = false;
+const IS_DEV = true;
 
 const getCatapultDamagePopupStyle = () =>
   IS_DEV

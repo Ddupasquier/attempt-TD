@@ -6,6 +6,8 @@ type TowerType = {
   range: number;
   rate: number;
   damage: number;
+  critChance: number;
+  critMultiplier: number;
   knockback: number;
   color: string;
   description: string;
@@ -83,6 +85,7 @@ type Projectile = {
   maxRange: number;
   knockbackDistance: number;
   splashRadius?: number;
+  isCrit?: boolean;
 };
 
 type FactionConfig = {

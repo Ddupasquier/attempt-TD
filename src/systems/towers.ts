@@ -18,6 +18,8 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
       const target = tileCenter(tower.targetCol, tower.targetRow, size);
       const distToTarget = Math.hypot(target.x - center.x, target.y - center.y);
       if (distToTarget > range) continue;
+      const isCrit = Math.random() < stats.critChance;
+      const damage = stats.damage * (isCrit ? stats.critMultiplier : 1);
 
       state.projectiles.push({
         x: center.x,
@@ -25,7 +27,7 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
         targetX: target.x,
         targetY: target.y,
         speed: 3 * size,
-        damage: stats.damage,
+        damage,
         color: "#1a1a1a",
         towerTypeId: tower.type.id,
         originX: center.x,
@@ -33,6 +35,7 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
         maxRange: stats.range * size,
         knockbackDistance: 0,
         splashRadius: size * 1,
+        isCrit,
       });
       tower.cooldown = stats.rate;
       continue;
@@ -57,18 +60,21 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
     tower.cooldown = stats.rate;
     const maxRange = stats.range * size;
     const knockbackDistance = stats.knockback * size;
+    const isCrit = Math.random() < stats.critChance;
+    const damage = stats.damage * (isCrit ? stats.critMultiplier : 1);
     state.projectiles.push({
       x: center.x,
       y: center.y,
       target,
       speed: 4.5 * size,
-      damage: stats.damage,
+      damage,
       color: tower.type.color,
       towerTypeId: tower.type.id,
       originX: center.x,
       originY: center.y,
       maxRange,
       knockbackDistance,
+      isCrit,
     });
   }
 };

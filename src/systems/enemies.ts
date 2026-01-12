@@ -1,21 +1,47 @@
 import type { GameState, WaveState } from "../types/core/types";
 import { pathPoints } from "../core/data";
 import { GAME_CONFIG, getFactionForWave } from "../core/config";
+import type { EnemyType } from "../types/core/types";
 
 const isBossWave = (waveNumber: number) => waveNumber % GAME_CONFIG.enemy.bossInterval === 0;
+
+const getFactionWaveIndex = (waveNumber: number) =>
+  ((waveNumber - 1) % GAME_CONFIG.enemy.bossInterval) + 1;
+
+const pickEnemyType = (wave: WaveState, factionId: string): EnemyType => {
+  const factionWave = getFactionWaveIndex(wave.waveNumber);
+  const factionWeights = GAME_CONFIG.enemy.typeSpawnWeightsByFaction[factionId as keyof typeof GAME_CONFIG.enemy.typeSpawnWeightsByFaction];
+  const weightsTable = factionWeights ?? GAME_CONFIG.enemy.typeSpawnWeights;
+  const config =
+    weightsTable.find((entry) => factionWave <= entry.maxWave) ?? weightsTable[weightsTable.length - 1];
+  const candidates = Object.entries(config.weights)
+    .filter(([, weight]) => typeof weight === "number" && weight > 0)
+    .map(([type, weight]) => ({ type: type as EnemyType, weight: weight as number }));
+  const total = candidates.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = Math.random() * total;
+  for (const entry of candidates) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.type;
+  }
+  return "raider";
+};
 
 const spawnEnemy = (state: GameState, wave: WaveState) => {
   const hp = GAME_CONFIG.enemy.baseHp + wave.waveNumber * GAME_CONFIG.enemy.hpPerWave;
   const speed = GAME_CONFIG.enemy.baseSpeed + wave.waveNumber * GAME_CONFIG.enemy.speedPerWave;
   const faction = getFactionForWave(wave.waveNumber);
+  const type = pickEnemyType(wave, faction.id);
+  const typeStats = GAME_CONFIG.enemy.types[type];
   state.enemies.push({
     id: crypto.randomUUID(),
-    hp,
-    maxHp: hp,
-    speed,
+    hp: Math.round(hp * typeStats.hpMultiplier),
+    maxHp: Math.round(hp * typeStats.hpMultiplier),
+    speed: speed * typeStats.speedMultiplier,
     waveId: wave.id,
     faction: faction.id,
+    type,
     targetIndex: 1,
+    sizeScale: typeStats.sizeScale,
   });
   wave.remainingEnemies += 1;
 };
@@ -31,6 +57,7 @@ const spawnBossEnemy = (state: GameState, wave: WaveState) => {
     speed: baseSpeed * GAME_CONFIG.enemy.bossSpeedMultiplier,
     waveId: wave.id,
     faction: faction.id,
+    type: "boss",
     targetIndex: 1,
     isBoss: true,
     sizeScale: GAME_CONFIG.enemy.bossScale,

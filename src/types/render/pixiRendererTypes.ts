@@ -1,4 +1,4 @@
-import type { Enemy, PixelSprite, Projectile, Tower } from "../core/types";
+import type { Enemy, EnemyType, PixelSprite, Projectile, Tower } from "../core/types";
 
 type DragPreview = {
   x: number;
@@ -24,7 +24,7 @@ type RendererOptions = {
   canvas: HTMLCanvasElement;
   pathTiles: Set<string>;
   towerSprites: Record<string, PixelSprite>;
-  enemySprites: Record<string, PixelSprite>;
+  enemySprites: Record<string, Record<EnemyType, PixelSprite>>;
 };
 
 export type { DragPreview, FrameData, RendererOptions };

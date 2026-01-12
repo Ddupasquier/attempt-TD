@@ -38,6 +38,7 @@ type Enemy = {
   speed: number;
   waveId: string;
   faction: FactionId;
+  type: EnemyType;
   targetIndex: number;
   isBoss?: boolean;
   sizeScale?: number;
@@ -59,6 +60,8 @@ type WaveState = {
   remainingEnemies: number;
   bossSpawned?: boolean;
 };
+
+type EnemyType = "skirmisher" | "raider" | "bruiser" | "bulwark" | "elite" | "boss";
 
 type Projectile = {
   x: number;
@@ -119,6 +122,7 @@ type PixelSprite = {
 
 export type {
   Enemy,
+  EnemyType,
   FactionConfig,
   FactionId,
   GameState,

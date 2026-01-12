@@ -1,5 +1,5 @@
 import { TOWER_IDS } from "../constants/towerIds";
-import type { FactionId, PixelSprite } from "../types/core/types";
+import type { EnemyType, FactionId, PixelSprite } from "../types/core/types";
 import { GAME_CONFIG } from "./config";
 
 const { grid, towerTypes } = GAME_CONFIG;
@@ -23,144 +23,93 @@ const pathPoints = [
   { x: 15, y: 7 },
 ];
 
-const enemySprites: Record<FactionId, PixelSprite> = {
-  humans: {
-    pixels: [
-      "..ss....",
-      ".sppp...",
-      "spppps..",
-      "spccps..",
-      ".sppp...",
-      "..ss....",
-      ".s..s...",
-      "s....s..",
-    ],
-    colors: {
-      s: "#c7c0b5",
-      p: "#7a6b62",
-      c: "#c14a3f",
-    },
-  },
-  orcs: {
-    pixels: [
-      "..gg....",
-      ".gllg...",
-      "gllllg..",
-      "gkllkg..",
-      ".gggg...",
-      "..gg....",
-      ".g..g...",
-      "g....g..",
-    ],
-    colors: {
-      g: "#5f8f4a",
-      l: "#2f2a25",
-      k: "#c14a3f",
-    },
-  },
-  elves: {
-    pixels: [
-      "..ee....",
-      ".eppp...",
-      "eppppe..",
-      "epffee..",
-      ".eppp...",
-      "..ee....",
-      ".e..e...",
-      "e....e..",
-    ],
-    colors: {
-      e: "#6aa88f",
-      p: "#e7e1d6",
-      f: "#cfa94a",
-    },
-  },
-  undead: {
-    pixels: [
-      "..uu....",
-      ".uqqq...",
-      "uqqqqu..",
-      "uqrrqu..",
-      ".uqqq...",
-      "..uu....",
-      ".u..u...",
-      "u....u..",
-    ],
-    colors: {
-      u: "#6e8a8f",
-      q: "#2b3a3d",
-      r: "#9fc4c9",
-    },
-  },
-  dwarves: {
-    pixels: [
-      "..dd....",
-      ".dppp...",
-      "dppppd..",
-      "dpbbpd..",
-      ".dppp...",
-      "..dd....",
-      ".d..d...",
-      "d....d..",
-    ],
-    colors: {
-      d: "#b07a4a",
-      p: "#f0dfc2",
-      b: "#5a4b40",
-    },
-  },
-  spirits: {
-    pixels: [
-      "..ss....",
-      ".swws...",
-      "swwwws..",
-      "swttws..",
-      ".swws...",
-      "..ss....",
-      ".s..s...",
-      "s....s..",
-    ],
-    colors: {
-      s: "#9bd2ff",
-      w: "#e7f4ff",
-      t: "#6aa6d6",
-    },
-  },
-  demons: {
-    pixels: [
-      "..dd....",
-      ".drrd...",
-      "drrrrd..",
-      "drkkrd..",
-      ".drrd...",
-      "..dd....",
-      ".d..d...",
-      "d....d..",
-    ],
-    colors: {
-      d: "#b12c2c",
-      r: "#f2b0a0",
-      k: "#4a1c1c",
-    },
-  },
-  dragons: {
-    pixels: [
-      "..gg....",
-      ".gddg...",
-      "gddddg..",
-      "gdffdg..",
-      ".gddg...",
-      "..gg....",
-      ".g..g...",
-      "g....g..",
-    ],
-    colors: {
-      g: "#cf8a3d",
-      d: "#f2d5a0",
-      f: "#6b3c1d",
-    },
-  },
+const ENEMY_ARCHETYPE_PIXELS: Record<EnemyType, string[]> = {
+  skirmisher: [
+    "........",
+    "..a.....",
+    ".aa.....",
+    ".ac.....",
+    ".aa.....",
+    "..a.....",
+    ".a.a....",
+    ".....a..",
+  ],
+  raider: [
+    "..bb....",
+    ".babb...",
+    "baabbb..",
+    "baacbb..",
+    ".baab...",
+    "..bb....",
+    ".b..b...",
+    "b....b..",
+  ],
+  bruiser: [
+    "..bbb...",
+    ".bbbbb..",
+    "bbabbb..",
+    "bbacbb..",
+    ".bbbbb..",
+    "..bbb...",
+    ".bb..b..",
+    "b....b..",
+  ],
+  bulwark: [
+    "..bbbb..",
+    ".bbbbbb.",
+    "bbbbbbbb",
+    "bbbacbbb",
+    "bbbbbbbb",
+    ".bbbbbb.",
+    "..bbbb..",
+    ".bb..bb.",
+  ],
+  elite: [
+    "..c..c..",
+    ".bbbbbb.",
+    "bbabbbb.",
+    "bbacbbb.",
+    ".bbbabb.",
+    "..bbbb..",
+    ".b..b...",
+    "b....b..",
+  ],
+  boss: [
+    "..d..d..",
+    ".bbbbbb.",
+    "bbbbbbbb",
+    "bbbacbbb",
+    "bbbbbbbb",
+    ".bbbbbb.",
+    "..bbbb..",
+    ".bb..bb.",
+  ],
 };
+
+const ENEMY_FACTION_PALETTES: Record<FactionId, Record<string, string>> = {
+  humans: { a: "#7a6b62", b: "#c7c0b5", c: "#c14a3f", d: "#f2d5a0" },
+  orcs: { a: "#2f2a25", b: "#5f8f4a", c: "#c14a3f", d: "#7a4b2f" },
+  elves: { a: "#e7e1d6", b: "#6aa88f", c: "#cfa94a", d: "#f4efe6" },
+  undead: { a: "#2b3a3d", b: "#6e8a8f", c: "#9fc4c9", d: "#c7c0b5" },
+  dwarves: { a: "#5a4b40", b: "#b07a4a", c: "#f0dfc2", d: "#8b6b3f" },
+  spirits: { a: "#e7f4ff", b: "#9bd2ff", c: "#6aa6d6", d: "#f8f4ff" },
+  demons: { a: "#4a1c1c", b: "#b12c2c", c: "#f2b0a0", d: "#f2b36d" },
+  dragons: { a: "#6b3c1d", b: "#cf8a3d", c: "#f2d5a0", d: "#8b6b3f" },
+};
+
+const buildEnemySprite = (pixels: string[], palette: Record<string, string>): PixelSprite => ({
+  pixels,
+  colors: palette,
+});
+
+const enemySprites: Record<FactionId, Record<EnemyType, PixelSprite>> = Object.fromEntries(
+  Object.entries(ENEMY_FACTION_PALETTES).map(([faction, palette]) => [
+    faction,
+    Object.fromEntries(
+      Object.entries(ENEMY_ARCHETYPE_PIXELS).map(([type, pixels]) => [type, buildEnemySprite(pixels, palette)]),
+    ),
+  ]),
+) as Record<FactionId, Record<EnemyType, PixelSprite>>;
 
 const towerSprites: Record<string, PixelSprite> = {
   [TOWER_IDS.mage]: {

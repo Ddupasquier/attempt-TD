@@ -33,6 +33,30 @@ type GameConfig = {
     hpPerWave: number;
     baseSpeed: number;
     speedPerWave: number;
+    bossInterval: number;
+    bossHpMultiplier: number;
+    bossSpeedMultiplier: number;
+    bossScale: number;
+    types: {
+      skirmisher: { hpMultiplier: number; speedMultiplier: number; sizeScale: number };
+      raider: { hpMultiplier: number; speedMultiplier: number; sizeScale: number };
+      bruiser: { hpMultiplier: number; speedMultiplier: number; sizeScale: number };
+      bulwark: { hpMultiplier: number; speedMultiplier: number; sizeScale: number };
+      elite: { hpMultiplier: number; speedMultiplier: number; sizeScale: number };
+    };
+    typeSpawnWeights: Array<{
+      maxWave: number;
+      weights: Partial<Record<"skirmisher" | "raider" | "bruiser" | "bulwark" | "elite", number>>;
+    }>;
+    typeSpawnWeightsByFaction: Partial<
+      Record<
+        "humans" | "orcs" | "elves" | "undead" | "dwarves" | "spirits" | "demons" | "dragons",
+        Array<{
+          maxWave: number;
+          weights: Partial<Record<"skirmisher" | "raider" | "bruiser" | "bulwark" | "elite", number>>;
+        }>
+      >
+    >;
   };
 };
 

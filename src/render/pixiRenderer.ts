@@ -205,8 +205,10 @@ const createPixiRenderer = async (options: RendererOptions) => {
   Object.entries(options.towerSprites).forEach(([key, sprite]) => {
     towerTextures.set(key, createSpriteTexture(sprite));
   });
-  Object.entries(options.enemySprites).forEach(([key, sprite]) => {
-    enemyTextures.set(key, createSpriteTexture(sprite));
+  Object.entries(options.enemySprites).forEach(([factionId, sprites]) => {
+    Object.entries(sprites).forEach(([type, sprite]) => {
+      enemyTextures.set(`${factionId}:${type}`, createSpriteTexture(sprite));
+    });
   });
 
   const towerSpritesById = new Map<string, PIXI.Sprite>();
@@ -313,7 +315,9 @@ const createPixiRenderer = async (options: RendererOptions) => {
       if (enemy.x === undefined || enemy.y === undefined) continue;
       let sprite = enemySpritesById.get(enemy.id);
       if (!sprite) {
-        const texture = enemyTextures.get(enemy.faction) ?? PIXI.Texture.WHITE;
+        const textureKey = `${enemy.faction}:${enemy.type}`;
+        const texture =
+          enemyTextures.get(textureKey) ?? enemyTextures.get(`${enemy.faction}:raider`) ?? PIXI.Texture.WHITE;
         sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5);
         enemiesLayer.addChild(sprite);

@@ -9,6 +9,7 @@ const createInitialState = (): GameState => ({
   enemies: [],
   projectiles: [],
   effects: [],
+  damagePopups: [],
   selectedTower: null,
   waves: [],
   isCountingDown: false,
@@ -16,6 +17,7 @@ const createInitialState = (): GameState => ({
   elapsed: 0,
   soundEnabled: true,
   autoWaveEnabled: false,
+  showDamagePopups: true,
 });
 
 export { createInitialState };

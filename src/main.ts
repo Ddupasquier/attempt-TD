@@ -167,6 +167,7 @@ const uiState = createUiState({
   enemyFactionName: getFactionForWave(gameState.wave).name,
   soundEnabled: gameState.soundEnabled,
   autoWaveEnabled: gameState.autoWaveEnabled,
+  showDamagePopups: gameState.showDamagePopups,
   speedMultiplier: SPEED_STEPS[speedIndex],
   isCountingDown: gameState.isCountingDown,
   countdownRemaining: gameState.countdownRemaining,
@@ -240,6 +241,7 @@ const updateUI = () => {
     enemyFactionName: getFactionForWave(gameState.wave).name,
     soundEnabled: gameState.soundEnabled,
     autoWaveEnabled: gameState.autoWaveEnabled,
+    showDamagePopups: gameState.showDamagePopups,
     speedMultiplier: SPEED_STEPS[speedIndex],
     isCountingDown: gameState.isCountingDown,
     countdownRemaining: gameState.countdownRemaining,
@@ -294,6 +296,14 @@ const initUi = () => {
       },
       onToggleAutoWave: () => {
         gameState.autoWaveEnabled = !gameState.autoWaveEnabled;
+        markStateDirty();
+        updateUI();
+      },
+      onToggleDamagePopups: () => {
+        gameState.showDamagePopups = !gameState.showDamagePopups;
+        if (!gameState.showDamagePopups) {
+          gameState.damagePopups.length = 0;
+        }
         markStateDirty();
         updateUI();
       },
@@ -399,6 +409,7 @@ const loadSavedGame = () => {
   gameState.wave = data.wave ?? gameState.wave;
   gameState.soundEnabled = data.soundEnabled ?? gameState.soundEnabled;
   gameState.autoWaveEnabled = data.autoWaveEnabled ?? gameState.autoWaveEnabled;
+  gameState.showDamagePopups = data.showDamagePopups ?? gameState.showDamagePopups;
   gameState.towers = Array.isArray(data.towers)
     ? data.towers
         .map((tower) => {
@@ -512,6 +523,7 @@ const loop = (timestamp: number) => {
       enemies: gameState.enemies,
       projectiles: gameState.projectiles,
       effects: gameState.effects,
+      damagePopups: gameState.damagePopups,
       highlightedTowerId: highlightTowerId,
       highlightAlpha,
       dragPreview: dragPreview ?? undefined,
@@ -540,12 +552,24 @@ const loop = (timestamp: number) => {
   }
   updateEnemies(gameState, scaledDt, size, markStateDirty);
   updateTowers(gameState, scaledDt, size);
-  updateProjectiles(gameState, scaledDt, (towerTypeId) => audio.playDamageSound(towerTypeId, gameState.soundEnabled));
+  updateProjectiles(
+    gameState,
+    scaledDt,
+    (towerTypeId) => audio.playDamageSound(towerTypeId, gameState.soundEnabled),
+    gameState.showDamagePopups,
+  );
   for (let i = gameState.effects.length - 1; i >= 0; i -= 1) {
     const effect = gameState.effects[i];
     effect.time += scaledDt;
     if (effect.time >= effect.duration) {
       gameState.effects.splice(i, 1);
+    }
+  }
+  for (let i = gameState.damagePopups.length - 1; i >= 0; i -= 1) {
+    const popup = gameState.damagePopups[i];
+    popup.time += scaledDt;
+    if (popup.time >= popup.duration) {
+      gameState.damagePopups.splice(i, 1);
     }
   }
 
@@ -557,6 +581,7 @@ const loop = (timestamp: number) => {
     enemies: gameState.enemies,
     projectiles: gameState.projectiles,
     effects: gameState.effects,
+    damagePopups: gameState.damagePopups,
     highlightedTowerId: highlightTowerId,
     highlightAlpha,
     dragPreview: dragPreview ?? undefined,

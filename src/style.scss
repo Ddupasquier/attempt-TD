@@ -441,7 +441,17 @@ button + button {
   letter-spacing: 0.08em;
 }
 
+.action-button.action-damage {
+  font-family: "Press Start 2P", "Space Grotesk", sans-serif;
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+}
+
 .action-speed__label {
+  display: inline-block;
+}
+
+.action-damage__label {
   display: inline-block;
 }
 

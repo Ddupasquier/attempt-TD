@@ -13,11 +13,13 @@
     countdownRemaining,
     soundEnabled,
     autoWaveEnabled,
+    showDamagePopups,
     speedMultiplier,
     onStartWave,
     onResetGame,
     onToggleSound,
     onToggleAutoWave,
+    onToggleDamagePopups,
     onToggleSpeed,
   } = $props<ActionsBarProps>();
 
@@ -111,6 +113,15 @@
     onclick={onToggleSound}
   >
     <SoundIcon />
+  </button>
+  <button
+    class="action-button action-damage"
+    class:is-active={showDamagePopups}
+    type="button"
+    aria-label={showDamagePopups ? UI_TEXT.damagePopupsOnAria : UI_TEXT.damagePopupsOffAria}
+    onclick={onToggleDamagePopups}
+  >
+    <span class="action-damage__label">DMG</span>
   </button>
   <button
     class="action-button action-speed"

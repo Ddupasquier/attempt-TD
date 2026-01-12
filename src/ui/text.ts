@@ -38,6 +38,8 @@ const UI_TEXT = {
   resetConfirmCancel: "Cancel",
   soundOnAria: "Sound on",
   soundOffAria: "Sound off",
+  damagePopupsOnAria: "Damage popups on",
+  damagePopupsOffAria: "Damage popups off",
   speedLabel: (label: string) => `Speed ${label}`,
   fullscreenEnterAria: "Enter fullscreen",
   fullscreenExitAria: "Exit fullscreen",

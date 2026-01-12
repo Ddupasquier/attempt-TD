@@ -106,6 +106,7 @@ type GameState = {
   enemies: Enemy[];
   projectiles: Projectile[];
   effects: SplashEffect[];
+  damagePopups: DamagePopup[];
   selectedTower: TowerType | null;
   waves: WaveState[];
   isCountingDown: boolean;
@@ -113,6 +114,7 @@ type GameState = {
   elapsed: number;
   soundEnabled: boolean;
   autoWaveEnabled: boolean;
+  showDamagePopups: boolean;
 };
 
 type SplashEffect = {
@@ -123,12 +125,21 @@ type SplashEffect = {
   duration: number;
 };
 
+type DamagePopup = {
+  x: number;
+  y: number;
+  value: number;
+  time: number;
+  duration: number;
+};
+
 type SaveData = {
   gold: number;
   lives: number;
   wave: number;
   soundEnabled: boolean;
   autoWaveEnabled?: boolean;
+  showDamagePopups?: boolean;
   selectedTowerId: string | null;
   towers: Array<{ col: number; row: number; typeId: string; level?: number; targetCol?: number; targetRow?: number }>;
 };
@@ -149,6 +160,7 @@ export type {
   Projectile,
   SaveData,
   SplashEffect,
+  DamagePopup,
   Tower,
   TowerType,
   WaveState,

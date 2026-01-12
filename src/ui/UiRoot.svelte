@@ -14,6 +14,7 @@
     onResetGame,
     onToggleSound,
     onToggleAutoWave,
+    onToggleDamagePopups,
     onToggleSpeed,
     onSelectTower,
     onStartDragTower,
@@ -51,11 +52,13 @@
     countdownRemaining={$uiState.countdownRemaining}
     soundEnabled={$uiState.soundEnabled}
     autoWaveEnabled={$uiState.autoWaveEnabled}
+    showDamagePopups={$uiState.showDamagePopups}
     speedMultiplier={$uiState.speedMultiplier}
     onStartWave={onStartWave}
     onResetGame={handleOpenResetConfirm}
     onToggleSound={onToggleSound}
     onToggleAutoWave={onToggleAutoWave}
+    onToggleDamagePopups={onToggleDamagePopups}
     onToggleSpeed={onToggleSpeed}
   />
   <HudOverlay

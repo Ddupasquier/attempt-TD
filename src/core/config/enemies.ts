@@ -5,10 +5,10 @@ const ENEMY_CONFIG = {
   speedPerWave: 0.035,
   bossInterval: 10,
   bossHpMultiplier: 8,
-  bossSpeedMultiplier: 0.6,
+  bossSpeedMultiplier: 0.4,
   bossScale: 1.6,
-  bossKnockbackResistSeconds: 2.0,
-  bossKnockbackDistanceMultiplier: 0.35,
+  bossKnockbackResistSeconds: 1.25,
+  bossKnockbackDistanceMultiplier: 0.45,
   types: {
     skirmisher: {
       hpMultiplier: 0.6,

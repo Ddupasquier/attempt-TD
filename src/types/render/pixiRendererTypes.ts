@@ -22,6 +22,13 @@ type FrameData = {
     time: number;
     duration: number;
   }[];
+  damagePopups: {
+    x: number;
+    y: number;
+    value: number;
+    time: number;
+    duration: number;
+  }[];
   highlightedTowerId: string | null;
   highlightAlpha: number;
   dragPreview?: DragPreview;

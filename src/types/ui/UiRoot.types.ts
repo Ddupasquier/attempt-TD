@@ -10,6 +10,7 @@ type UiRootProps = {
   onResetGame: () => void;
   onToggleSound: () => void;
   onToggleAutoWave: () => void;
+  onToggleDamagePopups: () => void;
   onToggleSpeed: () => void;
   onSelectTower: (towerId: string | null) => void;
   onStartDragTower: (towerId: string) => void;

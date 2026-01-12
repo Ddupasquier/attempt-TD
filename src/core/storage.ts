@@ -9,6 +9,7 @@ const saveGame = (state: GameState) => {
     wave: state.wave,
     soundEnabled: state.soundEnabled,
     autoWaveEnabled: state.autoWaveEnabled,
+    showDamagePopups: state.showDamagePopups,
     selectedTowerId: state.selectedTower ? state.selectedTower.id : null,
     towers: state.towers.map((tower) => ({
       col: tower.col,

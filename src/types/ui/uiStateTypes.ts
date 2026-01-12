@@ -7,6 +7,7 @@ type UiState = {
   enemyFactionName: string;
   soundEnabled: boolean;
   autoWaveEnabled: boolean;
+  showDamagePopups: boolean;
   speedMultiplier: number;
   isCountingDown: boolean;
   countdownRemaining: number;

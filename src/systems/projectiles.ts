@@ -5,7 +5,19 @@ const updateProjectiles = (
   state: GameState,
   dt: number,
   playDamageSound: (towerTypeId: string) => void,
+  showDamagePopups: boolean,
 ) => {
+  const pushDamagePopup = (x: number, y: number, value: number) => {
+    if (!showDamagePopups || value <= 0) return;
+    state.damagePopups.push({
+      x,
+      y,
+      value,
+      time: 0,
+      duration: 0.6,
+    });
+  };
+
   for (let i = state.projectiles.length - 1; i >= 0; i -= 1) {
     const bolt = state.projectiles[i];
     if (!bolt.target && bolt.targetX === undefined) {
@@ -35,6 +47,9 @@ const updateProjectiles = (
     if (dist <= step) {
       if (bolt.target) {
         bolt.target.hp -= bolt.damage;
+        if (bolt.target.x !== undefined && bolt.target.y !== undefined) {
+          pushDamagePopup(bolt.target.x, bolt.target.y, Math.round(bolt.damage));
+        }
       } else if (bolt.splashRadius) {
         for (const enemy of state.enemies) {
           if (enemy.x === undefined || enemy.y === undefined) continue;
@@ -43,7 +58,9 @@ const updateProjectiles = (
           const sdist = Math.hypot(sx, sy);
           if (sdist > bolt.splashRadius) continue;
           const falloff = Math.max(0, 1 - sdist / bolt.splashRadius);
-          enemy.hp -= bolt.damage * falloff;
+          const damage = bolt.damage * falloff;
+          enemy.hp -= damage;
+          pushDamagePopup(enemy.x, enemy.y, Math.round(damage));
         }
         state.effects.push({
           x: targetX,

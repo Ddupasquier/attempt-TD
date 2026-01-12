@@ -248,9 +248,19 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const enemiesLayer = new PIXI.Container();
   const healthBarsLayer = new PIXI.Container();
   const projectilesLayer = new PIXI.Container();
+  const damageLayer = new PIXI.Container();
   const overlayLayer = new PIXI.Container();
 
-  app.stage.addChild(terrainLayer, towersLayer, starsLayer, enemiesLayer, healthBarsLayer, projectilesLayer, overlayLayer);
+  app.stage.addChild(
+    terrainLayer,
+    towersLayer,
+    starsLayer,
+    enemiesLayer,
+    healthBarsLayer,
+    projectilesLayer,
+    damageLayer,
+    overlayLayer,
+  );
 
   const towerTextures = new Map<string, PIXI.Texture>();
   const enemyTextures = new Map<string, PIXI.Texture>();
@@ -269,6 +279,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const enemySpritesById = new Map<string, PIXI.Sprite>();
   const healthBarsById = new Map<string, PIXI.Graphics>();
   const projectilePool: PIXI.Sprite[] = [];
+  const damageTextPool: PIXI.Text[] = [];
   const overlayGraphics = new PIXI.Graphics();
   const overlayDragSprite = new PIXI.Sprite();
 
@@ -436,6 +447,40 @@ const createPixiRenderer = async (options: RendererOptions) => {
     }
   };
 
+  const updateDamagePopups = (
+    size: number,
+    popups: Array<{ x: number; y: number; value: number; time: number; duration: number }>,
+  ) => {
+    while (damageTextPool.length < popups.length) {
+      const text = new PIXI.Text({
+        text: "",
+        style: {
+          fontSize: 10,
+          fill: "#1b1b1b",
+          fontWeight: "600",
+        },
+      });
+      text.anchor.set(0.5);
+      damageLayer.addChild(text);
+      damageTextPool.push(text);
+    }
+
+    popups.forEach((popup, index) => {
+      const text = damageTextPool[index];
+      const progress = popup.duration > 0 ? Math.min(1, popup.time / popup.duration) : 1;
+      const rise = size * 0.35 * progress;
+      text.visible = true;
+      text.text = `${popup.value}`;
+      text.alpha = 0.7 * (1 - progress);
+      text.style.fontSize = Math.max(10, size * 0.26);
+      text.position.set(popup.x, popup.y - rise);
+    });
+
+    for (let i = popups.length; i < damageTextPool.length; i += 1) {
+      damageTextPool[i].visible = false;
+    }
+  };
+
   const updateOverlay = (frame: FrameData) => {
     overlayGraphics.clear();
     overlayDragSprite.visible = false;
@@ -497,6 +542,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
     updateTowers(frame.size, frame.towers);
     updateEnemies(frame.size, frame.enemies);
     updateProjectiles(frame.size, frame.projectiles);
+    updateDamagePopups(frame.size, frame.damagePopups);
     updateOverlay(frame);
   };
 

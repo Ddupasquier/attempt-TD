@@ -73,10 +73,14 @@ const updateEnemies = (
 ) => {
   const turnStrength = 10;
 
-  const getWaypoint = (index: number) => ({
-    x: pathPoints[index].x * size + size * 0.5,
-    y: pathPoints[index].y * size + size * 0.5,
-  });
+  const clampIndex = (index: number) => Math.max(0, Math.min(index, pathPoints.length - 1));
+  const getWaypoint = (index: number) => {
+    const point = pathPoints[clampIndex(index)];
+    return {
+      x: point.x * size + size * 0.5,
+      y: point.y * size + size * 0.5,
+    };
+  };
 
   const getPathDirection = (targetIndex: number, fallbackX: number, fallbackY: number) => {
     const prevIndex = Math.max(0, targetIndex - 1);
@@ -128,6 +132,10 @@ const updateEnemies = (
     const dist = Math.hypot(dx, dy);
     if (dist < size * 0.2) {
       enemy.targetIndex += 1;
+      if (enemy.targetIndex >= pathPoints.length) {
+        enemy.reachedEnd = true;
+        continue;
+      }
     }
     const desiredX = dist === 0 ? 0 : dx / dist;
     const desiredY = dist === 0 ? 0 : dy / dist;

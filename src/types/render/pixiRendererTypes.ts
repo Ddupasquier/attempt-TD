@@ -27,6 +27,7 @@ type FrameData = {
     y: number;
     value: number;
     color?: string;
+    sizeMult?: number;
     time: number;
     duration: number;
   }[];

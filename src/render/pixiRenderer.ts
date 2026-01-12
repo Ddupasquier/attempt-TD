@@ -477,7 +477,8 @@ const createPixiRenderer = async (options: RendererOptions) => {
         text.style.fill = "#1b1b1b";
       }
       text.alpha = 0.7 * (1 - progress);
-      text.style.fontSize = Math.max(10, size * 0.26);
+      const baseSize = Math.max(10, size * 0.26);
+      text.style.fontSize = baseSize * (popup.sizeMult ?? 1);
       text.position.set(popup.x, popup.y - rise);
     });
 

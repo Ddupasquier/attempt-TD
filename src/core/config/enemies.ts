@@ -7,13 +7,13 @@ const ENEMY_CONFIG = {
   bossHpMultiplier: 8,
   bossSpeedMultiplier: 0.6,
   bossScale: 1.6,
-  bossKnockbackResistSeconds: 1.0,
+  bossKnockbackResistSeconds: 2.0,
   types: {
     skirmisher: { hpMultiplier: 0.6, speedMultiplier: 1.35, sizeScale: 0.75, knockbackResistSeconds: 0.12 },
     raider: { hpMultiplier: 1, speedMultiplier: 1, sizeScale: 1, knockbackResistSeconds: 0.22 },
     bruiser: { hpMultiplier: 1.6, speedMultiplier: 0.85, sizeScale: 1.1, knockbackResistSeconds: 0.35 },
-    bulwark: { hpMultiplier: 2.4, speedMultiplier: 0.6, sizeScale: 1.25, knockbackResistSeconds: 0.5 },
-    elite: { hpMultiplier: 1.8, speedMultiplier: 1.1, sizeScale: 1.05, knockbackResistSeconds: 0.45 },
+    bulwark: { hpMultiplier: 2.4, speedMultiplier: 0.6, sizeScale: 1.25, knockbackResistSeconds: 0.7 },
+    elite: { hpMultiplier: 1.8, speedMultiplier: 1.1, sizeScale: 1.05, knockbackResistSeconds: 0.8 },
   },
   typeSpawnWeights: [
     { maxWave: 2, weights: { raider: 0.6, skirmisher: 0.4 } },

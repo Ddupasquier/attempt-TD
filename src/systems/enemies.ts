@@ -145,12 +145,14 @@ const updateEnemies = (
     enemy.x += (enemy.vx ?? 0) * speed * dt;
     enemy.y += (enemy.vy ?? 0) * speed * dt;
 
-    const knockbackMagnitude = Math.hypot(enemy.knockbackX ?? 0, enemy.knockbackY ?? 0);
-    if (knockbackMagnitude > 0.001) {
+    const legacyKnockback = Math.hypot(enemy.knockbackX ?? 0, enemy.knockbackY ?? 0);
+    let knockbackRemaining = Math.max(enemy.knockbackRemaining ?? 0, legacyKnockback);
+    if (knockbackRemaining > 0.001) {
       clampToPathSegment(enemy);
       const pathDir = getPathDirection(enemy.targetIndex, desiredX, desiredY);
-      enemy.x -= pathDir.x * knockbackMagnitude * dt;
-      enemy.y -= pathDir.y * knockbackMagnitude * dt;
+      const step = Math.min(knockbackRemaining, size * 8 * dt);
+      enemy.x -= pathDir.x * step;
+      enemy.y -= pathDir.y * step;
       clampToPathSegment(enemy);
       if (enemy.targetIndex > 0) {
         const prev = getWaypoint(enemy.targetIndex - 1);
@@ -167,10 +169,12 @@ const updateEnemies = (
           }
         }
       }
-      const decay = Math.pow(0.001, dt);
-      enemy.knockbackX = (enemy.knockbackX ?? 0) * decay;
-      enemy.knockbackY = (enemy.knockbackY ?? 0) * decay;
+      knockbackRemaining = Math.max(0, knockbackRemaining - step);
+      enemy.knockbackRemaining = knockbackRemaining;
+      enemy.knockbackX = 0;
+      enemy.knockbackY = 0;
     } else {
+      enemy.knockbackRemaining = 0;
       enemy.knockbackX = 0;
       enemy.knockbackY = 0;
     }

@@ -80,9 +80,13 @@ const updateProjectiles = (
         if (directionX !== 0 || directionY !== 0) {
           const resistance =
             bolt.target.isBoss || bolt.target.type === "elite" ? 0.5 : 1;
-          const pushSpeed = bolt.knockbackDistance * 6 * resistance;
-          bolt.target.knockbackX = (bolt.target.knockbackX ?? 0) - directionX * pushSpeed;
-          bolt.target.knockbackY = (bolt.target.knockbackY ?? 0) - directionY * pushSpeed;
+          const knockbackDistance = bolt.knockbackDistance * 2.2 * resistance;
+          bolt.target.knockbackRemaining = Math.max(
+            bolt.target.knockbackRemaining ?? 0,
+            knockbackDistance,
+          );
+          bolt.target.knockbackX = 0;
+          bolt.target.knockbackY = 0;
           bolt.target.knockbackResistRemaining =
             bolt.target.isBoss || bolt.target.type === "boss"
               ? GAME_CONFIG.enemy.bossKnockbackResistSeconds

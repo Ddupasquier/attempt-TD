@@ -50,6 +50,7 @@ type Enemy = {
   vy?: number;
   knockbackX?: number;
   knockbackY?: number;
+  knockbackRemaining?: number;
   knockbackResistRemaining?: number;
   reachedEnd?: boolean;
 };

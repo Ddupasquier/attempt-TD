@@ -107,6 +107,9 @@ const updateEnemies = (
   };
 
   for (const enemy of state.enemies) {
+    if ((enemy.knockbackResistRemaining ?? 0) > 0) {
+      enemy.knockbackResistRemaining = Math.max(0, (enemy.knockbackResistRemaining ?? 0) - dt);
+    }
     if (enemy.x === undefined || enemy.y === undefined) {
       const start = getWaypoint(0);
       enemy.x = start.x;
@@ -178,7 +181,7 @@ const updateEnemies = (
       onStateChange();
     } else if (enemy.hp <= 0) {
       state.enemies.splice(i, 1);
-      state.gold += 8;
+      state.gold += 6;
       const wave = state.waves.find((item) => item.id === enemy.waveId);
       if (wave) {
         wave.remainingEnemies = Math.max(0, wave.remainingEnemies - 1);

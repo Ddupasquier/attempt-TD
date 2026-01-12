@@ -43,6 +43,57 @@ const createSpriteTexture = (sprite: PixelSprite) => {
   return texture;
 };
 
+const createRockTexture = (diameter = 32) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = diameter;
+  canvas.height = diameter;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return PIXI.Texture.WHITE;
+  }
+  const center = diameter / 2;
+  const radius = diameter * 0.45;
+
+  ctx.clearRect(0, 0, diameter, diameter);
+  ctx.fillStyle = "#1f1f1f";
+  ctx.beginPath();
+  ctx.arc(center, center, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#343434";
+  ctx.beginPath();
+  ctx.arc(center - radius * 0.2, center - radius * 0.15, radius * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+
+  for (let i = 0; i < 12; i += 1) {
+    const angle = ((i + 1) / 12) * Math.PI * 2;
+    const jitter = (hash(i, diameter, 7) % 100) / 100;
+    const edgeRadius = radius * (0.82 + jitter * 0.18);
+    const x = center + Math.cos(angle) * edgeRadius;
+    const y = center + Math.sin(angle) * edgeRadius;
+    ctx.fillStyle = i % 2 === 0 ? "#242424" : "#2b2b2b";
+    ctx.beginPath();
+    ctx.arc(x, y, radius * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  for (let i = 0; i < 10; i += 1) {
+    const px = (hash(i, diameter, 3) % 100) / 100;
+    const py = (hash(i, diameter, 5) % 100) / 100;
+    const x = center + (px * 2 - 1) * radius * 0.65;
+    const y = center + (py * 2 - 1) * radius * 0.65;
+    if (Math.hypot(x - center, y - center) > radius * 0.7) continue;
+    ctx.fillStyle = i % 2 === 0 ? "#151515" : "#2a2a2a";
+    ctx.beginPath();
+    ctx.arc(x, y, radius * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const texture = PIXI.Texture.from(canvas);
+  texture.source.scaleMode = "nearest";
+  return texture;
+};
+
 const fillRect = (
   graphics: PIXI.Graphics,
   color: number,
@@ -211,6 +262,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
       enemyTextures.set(`${factionId}:${type}`, createSpriteTexture(sprite));
     });
   });
+  const rockTexture = createRockTexture();
 
   const towerSpritesById = new Map<string, PIXI.Sprite>();
   const starGraphicsById = new Map<string, PIXI.Graphics>();
@@ -360,9 +412,11 @@ const createPixiRenderer = async (options: RendererOptions) => {
     projectiles.forEach((bolt, index) => {
       const sprite = projectilePool[index];
       sprite.visible = true;
-      sprite.tint = hexToNumber(bolt.color);
+      const isCatapult = bolt.towerTypeId === TOWER_IDS.catapult;
+      sprite.texture = isCatapult ? rockTexture : PIXI.Texture.WHITE;
+      sprite.tint = isCatapult ? 0xffffff : hexToNumber(bolt.color);
       let sizePx = 3;
-      if (bolt.towerTypeId === TOWER_IDS.catapult) {
+      if (isCatapult) {
         const targetX = bolt.targetX ?? bolt.x;
         const targetY = bolt.targetY ?? bolt.y;
         const totalDist = Math.hypot(targetX - bolt.originX, targetY - bolt.originY);

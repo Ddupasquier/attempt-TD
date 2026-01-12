@@ -69,7 +69,7 @@ const TOWER_CONFIG = {
       types: ["Siege", "Ranged"],
       cost: 140,
       range: 6.5,
-      rate: 3.5,
+      rate: 7,
       damage: 55,
       knockback: 0,
       color: "#c58b5a",

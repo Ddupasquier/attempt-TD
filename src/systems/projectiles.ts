@@ -1,4 +1,5 @@
 import type { GameState } from "../types/core/types";
+import { GAME_CONFIG } from "../core/config";
 
 const updateProjectiles = (
   state: GameState,
@@ -53,6 +54,11 @@ const updateProjectiles = (
         });
       }
       if (bolt.target && bolt.knockbackDistance > 0) {
+        if ((bolt.target.knockbackResistRemaining ?? 0) > 0) {
+          playDamageSound(bolt.towerTypeId);
+          state.projectiles.splice(i, 1);
+          continue;
+        }
         let directionX = 0;
         let directionY = 0;
         if (bolt.target.vx !== undefined && bolt.target.vy !== undefined) {
@@ -77,6 +83,10 @@ const updateProjectiles = (
           const pushSpeed = bolt.knockbackDistance * 6 * resistance;
           bolt.target.knockbackX = (bolt.target.knockbackX ?? 0) - directionX * pushSpeed;
           bolt.target.knockbackY = (bolt.target.knockbackY ?? 0) - directionY * pushSpeed;
+          bolt.target.knockbackResistRemaining =
+            bolt.target.isBoss || bolt.target.type === "boss"
+              ? GAME_CONFIG.enemy.bossKnockbackResistSeconds
+              : GAME_CONFIG.enemy.types[bolt.target.type].knockbackResistSeconds;
         }
       }
       playDamageSound(bolt.towerTypeId);

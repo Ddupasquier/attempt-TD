@@ -116,6 +116,7 @@ const canPlaceTower = (col: number, row: number) => {
 };
 
 const addTower = (col: number, row: number, type: TowerType, rangeBonus: number) => {
+  const defaultTarget = type.id === TOWER_IDS.catapult ? pathPoints[0] : undefined;
   const tower = {
     id: crypto.randomUUID(),
     col,
@@ -124,6 +125,8 @@ const addTower = (col: number, row: number, type: TowerType, rangeBonus: number)
     cooldown: 0,
     rangeBonus,
     level: 0,
+    targetCol: defaultTarget?.x,
+    targetRow: defaultTarget?.y,
   };
   gameState.towers.push(tower);
   markStateDirty();

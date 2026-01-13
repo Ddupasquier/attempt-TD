@@ -1,5 +1,6 @@
 import type { GameState } from "../types/core/types";
 import { GAME_CONFIG } from "../core/config";
+import { getDevConfig, isDevEnabled } from "../core/devFlags";
 import { TOWER_IDS } from "../constants/towerIds";
 import { getCatapultDamagePopupStyle } from "../core/devFlags";
 
@@ -9,6 +10,9 @@ const updateProjectiles = (
   playDamageSound: (towerTypeId: string) => void,
   showDamagePopups: boolean,
 ) => {
+  const devConfig = getDevConfig();
+  const godMode = devConfig.godMode;
+  const isGodMode = isDevEnabled() && godMode.enabled;
   const pushDamagePopup = (
     x: number,
     y: number,
@@ -57,7 +61,11 @@ const updateProjectiles = (
     const step = bolt.speed * dt;
     if (dist <= step) {
       if (bolt.target) {
-        bolt.target.hp -= bolt.damage;
+        if (isGodMode && godMode.oneShotEnemies) {
+          bolt.target.hp = 0;
+        } else {
+          bolt.target.hp -= bolt.damage;
+        }
         if (bolt.target.x !== undefined && bolt.target.y !== undefined) {
           const style = bolt.isCrit
             ? {
@@ -86,7 +94,11 @@ const updateProjectiles = (
           if (sdist > bolt.splashRadius) continue;
           const falloff = Math.max(0, 1 - sdist / bolt.splashRadius);
           const damage = bolt.damage * falloff;
-          enemy.hp -= damage;
+          if (isGodMode && godMode.oneShotEnemies) {
+            enemy.hp = 0;
+          } else {
+            enemy.hp -= damage;
+          }
           const style = bolt.isCrit
             ? {
                 color: "#d60000",

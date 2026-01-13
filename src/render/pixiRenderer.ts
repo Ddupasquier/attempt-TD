@@ -245,6 +245,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const terrainLayer = new PIXI.Graphics();
   const towersLayer = new PIXI.Container();
   const starsLayer = new PIXI.Container();
+  const trapsLayer = new PIXI.Container();
   const enemiesLayer = new PIXI.Container();
   const healthBarsLayer = new PIXI.Container();
   const projectilesLayer = new PIXI.Container();
@@ -255,6 +256,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
     terrainLayer,
     towersLayer,
     starsLayer,
+    trapsLayer,
     enemiesLayer,
     healthBarsLayer,
     projectilesLayer,
@@ -263,9 +265,13 @@ const createPixiRenderer = async (options: RendererOptions) => {
   );
 
   const towerTextures = new Map<string, PIXI.Texture>();
+  const trapTextures = new Map<string, PIXI.Texture>();
   const enemyTextures = new Map<string, PIXI.Texture>();
   Object.entries(options.towerSprites).forEach(([key, sprite]) => {
     towerTextures.set(key, createSpriteTexture(sprite));
+  });
+  Object.entries(options.trapSprites).forEach(([key, sprite]) => {
+    trapTextures.set(key, createSpriteTexture(sprite));
   });
   Object.entries(options.enemySprites).forEach(([factionId, sprites]) => {
     Object.entries(sprites).forEach(([type, sprite]) => {
@@ -275,6 +281,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const rockTexture = createRockTexture();
 
   const towerSpritesById = new Map<string, PIXI.Sprite>();
+  const trapSpritesById = new Map<string, PIXI.Sprite>();
   const starGraphicsById = new Map<string, PIXI.Graphics>();
   const enemySpritesById = new Map<string, PIXI.Sprite>();
   const healthBarsById = new Map<string, PIXI.Graphics>();
@@ -358,6 +365,32 @@ const createPixiRenderer = async (options: RendererOptions) => {
           starGraphic.clear();
         }
       }
+    }
+  };
+
+  const updateTraps = (size: number, traps: Array<{ id: string; col: number; row: number; type: { id: string } }>) => {
+    const activeIds = new Set(traps.map((trap) => trap.id));
+    for (const [id, sprite] of trapSpritesById.entries()) {
+      if (!activeIds.has(id)) {
+        trapsLayer.removeChild(sprite);
+        trapSpritesById.delete(id);
+      }
+    }
+
+    for (const trap of traps) {
+      let sprite = trapSpritesById.get(trap.id);
+      if (!sprite) {
+        const texture = trapTextures.get(trap.type.id) ?? PIXI.Texture.WHITE;
+        sprite = new PIXI.Sprite(texture);
+        sprite.anchor.set(0.5);
+        trapsLayer.addChild(sprite);
+        trapSpritesById.set(trap.id, sprite);
+      }
+      const center = tileCenter(trap.col, trap.row, size);
+      const textureWidth = sprite.texture.width || 1;
+      const scale = (size * 0.4) / textureWidth;
+      sprite.scale.set(scale);
+      sprite.position.set(center.x, center.y);
     }
   };
 
@@ -542,10 +575,28 @@ const createPixiRenderer = async (options: RendererOptions) => {
       overlayDragSprite.position.set(frame.dragPreview.x, frame.dragPreview.y);
       overlayDragSprite.visible = true;
     }
+    if (frame.trapPreview) {
+      const strokeWidth = Math.max(1.2, frame.size * 0.03);
+      if (frame.trapPreview.radius) {
+        overlayGraphics
+          .circle(frame.trapPreview.x, frame.trapPreview.y, frame.trapPreview.radius * frame.size)
+          .stroke({ width: strokeWidth, color: 0xffffff, alpha: 0.35 });
+      }
+      const texture = frame.trapPreview.spriteId
+        ? trapTextures.get(frame.trapPreview.spriteId) ?? PIXI.Texture.WHITE
+        : PIXI.Texture.WHITE;
+      const scale = (frame.size * 0.4) / (texture.width || 1);
+      overlayDragSprite.texture = texture;
+      overlayDragSprite.scale.set(scale);
+      overlayDragSprite.tint = 0xffffff;
+      overlayDragSprite.position.set(frame.trapPreview.x, frame.trapPreview.y);
+      overlayDragSprite.visible = true;
+    }
   };
 
   const updateFrame = (frame: FrameData) => {
     updateTowers(frame.size, frame.towers);
+    updateTraps(frame.size, frame.traps);
     updateEnemies(frame.size, frame.enemies);
     updateProjectiles(frame.size, frame.projectiles);
     updateDamagePopups(frame.size, frame.damagePopups);

@@ -13,6 +13,20 @@ type TowerType = {
   description: string;
 };
 
+type TrapType = {
+  id: string;
+  name: string;
+  types: string[];
+  cost: number;
+  duration: number;
+  maxTriggers?: number;
+  damage?: number;
+  splashRadiusTiles?: number;
+  slowMultiplier?: number;
+  slowDuration?: number;
+  description: string;
+};
+
 type Tower = {
   id: string;
   col: number;
@@ -20,6 +34,7 @@ type Tower = {
   type: TowerType;
   cooldown: number;
   rangeBonus: number;
+  damageBonus: number;
   level: number;
   targetCol?: number;
   targetRow?: number;
@@ -54,6 +69,9 @@ type Enemy = {
   knockbackY?: number;
   knockbackRemaining?: number;
   knockbackResistRemaining?: number;
+  slowRemaining?: number;
+  slowMultiplier?: number;
+  lastTrapTile?: string;
   reachedEnd?: boolean;
 };
 
@@ -88,6 +106,15 @@ type Projectile = {
   isCrit?: boolean;
 };
 
+type Trap = {
+  id: string;
+  col: number;
+  row: number;
+  type: TrapType;
+  remaining: number;
+  triggersRemaining?: number;
+};
+
 type FactionConfig = {
   id: FactionId;
   name: string;
@@ -106,6 +133,7 @@ type GameState = {
   maxLives: number;
   wave: number;
   towers: Tower[];
+  traps: Trap[];
   enemies: Enemy[];
   projectiles: Projectile[];
   effects: SplashEffect[];
@@ -146,6 +174,13 @@ type SaveData = {
   autoWaveEnabled?: boolean;
   showDamagePopups?: boolean;
   selectedTowerId: string | null;
+  traps?: Array<{
+    col: number;
+    row: number;
+    typeId: string;
+    remaining?: number;
+    triggersRemaining?: number;
+  }>;
   towers: Array<{ col: number; row: number; typeId: string; level?: number; targetCol?: number; targetRow?: number }>;
 };
 
@@ -166,6 +201,8 @@ export type {
   SaveData,
   SplashEffect,
   DamagePopup,
+  Trap,
+  TrapType,
   Tower,
   TowerType,
   WaveState,

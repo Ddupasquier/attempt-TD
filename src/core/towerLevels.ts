@@ -13,11 +13,12 @@ const getTowerStatsAtLevel = (tower: Tower, level: number) => {
   const clampedLevel = clampTowerLevel(level);
   const stats = TOWER_LEVEL_STATS[clampedLevel] ?? TOWER_LEVEL_STATS[0];
   const baseRange = tower.type.range + tower.rangeBonus;
+  const baseDamage = tower.type.damage * (1 + (tower.damageBonus ?? 0));
   return {
     level: clampedLevel,
     range: baseRange * stats.rangeMult,
     rate: tower.type.rate * stats.rateMult,
-    damage: tower.type.damage * stats.damageMult,
+    damage: baseDamage * stats.damageMult,
     critChance: tower.type.critChance,
     critMultiplier: tower.type.critMultiplier,
     knockback: tower.type.knockback * stats.knockbackMult,

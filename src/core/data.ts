@@ -1,8 +1,9 @@
 import { TOWER_IDS } from "../constants/towerIds";
+import { TRAP_IDS } from "../constants/trapIds";
 import type { EnemyType, FactionId, PixelSprite } from "../types/core/types";
 import { GAME_CONFIG } from "./config";
 
-const { grid, towerTypes } = GAME_CONFIG;
+const { grid, towerTypes, trapTypes } = GAME_CONFIG;
 const MIN_TOWER_RANGE = GAME_CONFIG.tower.minRange;
 
 const assertTowerRanges = () => {
@@ -236,12 +237,96 @@ const towerSprites: Record<string, PixelSprite> = {
   },
 };
 
+const trapSprites: Record<string, PixelSprite> = {
+  [TRAP_IDS.tacks]: {
+    pixels: [
+      "........",
+      "..x..x..",
+      ".x.x.x..",
+      "..xxxx..",
+      ".x.xx.x.",
+      "..xxxx..",
+      ".x.x.x..",
+      "........",
+    ],
+    colors: {
+      x: "#2b1f1f",
+    },
+  },
+  [TRAP_IDS.spike]: {
+    pixels: [
+      "........",
+      "...x....",
+      "..xxx...",
+      ".x.x.x..",
+      "x..x..x.",
+      ".x.x.x..",
+      "..xxx...",
+      "...x....",
+      "........",
+    ],
+    colors: {
+      x: "#8a6f5a",
+    },
+  },
+  [TRAP_IDS.glue]: {
+    pixels: [
+      "........",
+      "...gg...",
+      "..gggg..",
+      ".ggggg..",
+      ".ggggg..",
+      "..gggg..",
+      "...gg...",
+      "........",
+      "........",
+    ],
+    colors: {
+      g: "#d6bf6a",
+    },
+  },
+  [TRAP_IDS.shock]: {
+    pixels: [
+      "........",
+      "...y....",
+      "..y.y...",
+      ".y.y.y..",
+      "..y.y...",
+      "...y....",
+      "..y.....",
+      "........",
+    ],
+    colors: {
+      y: "#f6d76a",
+    },
+  },
+  [TRAP_IDS.bomb]: {
+    pixels: [
+      "........",
+      "..xxx...",
+      ".xxxxx..",
+      ".xxxyx..",
+      ".xxxxx..",
+      "..xxx...",
+      "...y....",
+      "...y....",
+      "........",
+    ],
+    colors: {
+      x: "#2a2a2a",
+      y: "#d3643a",
+    },
+  },
+};
+
 export {
   MIN_TOWER_RANGE,
   assertTowerRanges,
   enemySprites,
   grid,
   pathPoints,
+  trapSprites,
+  trapTypes,
   towerSprites,
   towerTypes,
 };

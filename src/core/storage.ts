@@ -11,6 +11,13 @@ const saveGame = (state: GameState) => {
     autoWaveEnabled: state.autoWaveEnabled,
     showDamagePopups: state.showDamagePopups,
     selectedTowerId: state.selectedTower ? state.selectedTower.id : null,
+    traps: state.traps.map((trap) => ({
+      col: trap.col,
+      row: trap.row,
+      typeId: trap.type.id,
+      remaining: trap.remaining,
+      triggersRemaining: trap.triggersRemaining,
+    })),
     towers: state.towers.map((tower) => ({
       col: tower.col,
       row: tower.row,

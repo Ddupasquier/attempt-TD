@@ -10,6 +10,8 @@
     uiState,
     towerTypes,
     towerSprites,
+    trapTypes,
+    trapSprites,
     onStartWave,
     onResetGame,
     onToggleSound,
@@ -18,6 +20,7 @@
     onToggleSpeed,
     onSelectTower,
     onStartDragTower,
+    onStartDragTrap,
     onUpgradeTower,
     onDeleteTower,
     onSetTowerTarget,
@@ -64,6 +67,8 @@
   <HudOverlay
     {towerTypes}
     {towerSprites}
+    {trapTypes}
+    {trapSprites}
     selectedTowerTypeId={$uiState.selectedTowerTypeId}
     gold={$uiState.gold}
     lives={$uiState.lives}
@@ -73,6 +78,7 @@
     onToggle={handleToggleHud}
     onSelectTower={onSelectTower}
     onStartDragTower={onStartDragTower}
+    onStartDragTrap={onStartDragTrap}
   />
   {#if $uiState.selectedTowerPopup}
     <TowerUpgradePopup

@@ -1,4 +1,4 @@
-import type { Grid, TowerType } from "./types";
+import type { Grid, TowerType, TrapType } from "./types";
 
 type TowerLevelStats = {
   damageMult: number;
@@ -14,10 +14,31 @@ type TowerLevelCostScale = {
 
 type GameConfig = {
   grid: Grid;
+  gameplay: {
+    startingGold: number;
+    startingLives: number;
+    maxLives: number;
+    startingWave: number;
+    speedSteps: number[];
+    countdownSeconds: number;
+    killReward: number;
+    bossLifeLoss: number;
+    flawlessLifeGain: number;
+    bossFlawlessLifeGain: number;
+    enemyTurnStrength: number;
+    enemyArrivalThreshold: number;
+    knockbackSpeed: number;
+    backtrackThreshold: number;
+    projectileSpeed: number;
+    catapultProjectileSpeed: number;
+    catapultSplashRadiusTiles: number;
+    archerTreeDamageBonus: number;
+  };
   towerTypes: TowerType[];
   tower: {
     minRange: number;
   };
+  trapTypes: TrapType[];
   maxTowerLevel: number;
   towerLevelStats: TowerLevelStats[];
   towerLevelCosts: TowerLevelCostScale[];

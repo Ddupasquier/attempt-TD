@@ -1,11 +1,13 @@
 import type { GameState } from "../types/core/types";
+import { GAME_CONFIG } from "./config";
 
 const createInitialState = (): GameState => ({
-  gold: 140,
-  lives: 15,
-  maxLives: 15,
-  wave: 1,
+  gold: GAME_CONFIG.gameplay.startingGold,
+  lives: GAME_CONFIG.gameplay.startingLives,
+  maxLives: GAME_CONFIG.gameplay.maxLives,
+  wave: GAME_CONFIG.gameplay.startingWave,
   towers: [],
+  traps: [],
   enemies: [],
   projectiles: [],
   effects: [],

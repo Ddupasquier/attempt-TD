@@ -1,5 +1,6 @@
 import "./style.scss";
 import {
+  GAME_CONFIG,
   RANGED_TREE_RANGE_BONUS,
   MAX_TOWER_LEVEL,
   assertTowerRanges,
@@ -19,18 +20,22 @@ import {
   saveGame,
   screenToGrid,
   tileCenter,
+  trapSprites,
+  trapTypes,
   towerSprites,
   towerTypes,
 } from "./core";
-import type { GameState, TowerType } from "./types/core/types";
+import type { GameState, TowerType, TrapType } from "./types/core/types";
 import { createPixiRenderer } from "./render/pixiRenderer";
 import { isBossWave, spawnBossEnemy, spawnEnemy, updateEnemies } from "./systems/enemies";
 import { updateProjectiles } from "./systems/projectiles";
+import { updateTraps } from "./systems/traps";
 import { updateTowers } from "./systems/towers";
 import { startNewWave, updateCountdown, updateWaves } from "./systems/waves";
 import { UiRoot, UI_TEXT, createUiState } from "./ui";
 import { mount } from "svelte";
 import { TOWER_IDS } from "./constants/towerIds";
+import { getDevConfig, isDevEnabled } from "./core/devFlags";
 import { clamp } from "./utils/math";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
@@ -54,6 +59,7 @@ let selectedTowerId: string | null = null;
 let recentTowerId: string | null = null;
 let recentRemainingSeconds = 0;
 let dragTowerTypeId: string | null = null;
+let dragTrapTypeId: string | null = null;
 let dragPointer: { x: number; y: number } | null = null;
 let lastPointer: { x: number; y: number } | null = null;
 let isDragging = false;
@@ -61,8 +67,6 @@ let speedIndex = 0;
 let pendingTargetTowerId: string | null = null;
 let currentMapWidth = 0;
 let currentMapHeight = 0;
-
-const SPEED_STEPS = [1, 1.5, 2];
 
 const RANGE_DISPLAY_DURATION = 2.5;
 const UPGRADE_POPUP_WIDTH = 190;
@@ -73,6 +77,12 @@ const markStateDirty = () => {
   if (!isLoading) {
     isStateDirty = true;
   }
+};
+
+const canAfford = (cost: number) => {
+  const devConfig = getDevConfig();
+  if (isDevEnabled() && devConfig.infiniteGold) return true;
+  return gameState.gold >= cost;
 };
 
 const resizeCanvas = () => {
@@ -115,8 +125,20 @@ const canPlaceTower = (col: number, row: number) => {
   return !gameState.towers.some((tower) => tower.col === col && tower.row === row);
 };
 
+const canPlaceTrap = (col: number, row: number) => {
+  if (col < 0 || row < 0 || col >= grid.cols || row >= grid.rows) return false;
+  if (!pathTiles.has(`${col},${row}`)) return false;
+  if (gameState.towers.some((tower) => tower.col === col && tower.row === row)) return false;
+  if (gameState.traps.some((trap) => trap.col === col && trap.row === row)) return false;
+  return true;
+};
+
 const addTower = (col: number, row: number, type: TowerType, rangeBonus: number) => {
   const defaultTarget = type.id === TOWER_IDS.catapult ? pathPoints[0] : undefined;
+  const damageBonus =
+    type.id === TOWER_IDS.archer && isTreeTile(col, row, pathTiles)
+      ? GAME_CONFIG.gameplay.archerTreeDamageBonus
+      : 0;
   const tower = {
     id: crypto.randomUUID(),
     col,
@@ -124,6 +146,7 @@ const addTower = (col: number, row: number, type: TowerType, rangeBonus: number)
     type,
     cooldown: 0,
     rangeBonus,
+    damageBonus,
     level: 0,
     targetCol: defaultTarget?.x,
     targetRow: defaultTarget?.y,
@@ -133,6 +156,20 @@ const addTower = (col: number, row: number, type: TowerType, rangeBonus: number)
   return tower;
 };
 
+const addTrap = (col: number, row: number, type: TrapType) => {
+  const trap = {
+    id: crypto.randomUUID(),
+    col,
+    row,
+    type,
+    remaining: type.duration,
+    triggersRemaining: type.maxTriggers,
+  };
+  gameState.traps.push(trap);
+  markStateDirty();
+  return trap;
+};
+
 const setSelectedTower = (id: string | null) => {
   gameState.selectedTower = id ? towerTypes.find((tower) => tower.id === id) || null : null;
   markStateDirty();
@@ -140,8 +177,18 @@ const setSelectedTower = (id: string | null) => {
 
 const startTowerDrag = (towerTypeId: string) => {
   dragTowerTypeId = towerTypeId;
+  dragTrapTypeId = null;
   isDragging = true;
   setSelectedTower(towerTypeId);
+  updateUI();
+};
+
+const startTrapDrag = (trapTypeId: string) => {
+  dragTrapTypeId = trapTypeId;
+  dragTowerTypeId = null;
+  isDragging = true;
+  selectedTowerId = null;
+  setSelectedTower(null);
   updateUI();
 };
 
@@ -151,8 +198,9 @@ const updateDragPointer = (event: PointerEvent) => {
   dragPointer = lastPointer;
 };
 
-const stopTowerDrag = () => {
+const stopDrag = () => {
   dragTowerTypeId = null;
+  dragTrapTypeId = null;
   dragPointer = null;
   isDragging = false;
   updateUI();
@@ -168,7 +216,7 @@ const uiState = createUiState({
   soundEnabled: gameState.soundEnabled,
   autoWaveEnabled: gameState.autoWaveEnabled,
   showDamagePopups: gameState.showDamagePopups,
-  speedMultiplier: SPEED_STEPS[speedIndex],
+  speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
   isCountingDown: gameState.isCountingDown,
   countdownRemaining: gameState.countdownRemaining,
   showDefeat: false,
@@ -188,7 +236,7 @@ const buildSelectedTowerPopup = () => {
   const nextLevel = tower.level + 1;
   const canUpgrade = tower.level < MAX_TOWER_LEVEL;
   const upgradeCost = canUpgrade ? getTowerUpgradeCost(tower, nextLevel) : 0;
-  const canAfford = canUpgrade && gameState.gold >= upgradeCost;
+  const canAffordUpgrade = canUpgrade && canAfford(upgradeCost);
   const statsCurrent = getTowerStatsAtLevel(tower, tower.level);
   const statsNext = canUpgrade ? getTowerStatsAtLevel(tower, nextLevel) : null;
 
@@ -211,7 +259,7 @@ const buildSelectedTowerPopup = () => {
     x,
     y,
     canUpgrade,
-    canAfford,
+    canAfford: canAffordUpgrade,
     upgradeCost,
     statsCurrent: {
       damage: statsCurrent.damage,
@@ -242,7 +290,7 @@ const updateUI = () => {
     soundEnabled: gameState.soundEnabled,
     autoWaveEnabled: gameState.autoWaveEnabled,
     showDamagePopups: gameState.showDamagePopups,
-    speedMultiplier: SPEED_STEPS[speedIndex],
+    speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
     isCountingDown: gameState.isCountingDown,
     countdownRemaining: gameState.countdownRemaining,
     showDefeat: isDefeated,
@@ -268,7 +316,7 @@ const startWave = () => {
   if (gameState.isCountingDown || isDefeated) return;
   startNewWave(gameState);
   gameState.isCountingDown = true;
-  gameState.countdownRemaining = 5;
+  gameState.countdownRemaining = GAME_CONFIG.gameplay.countdownSeconds;
   markStateDirty();
 };
 
@@ -279,6 +327,8 @@ const initUi = () => {
       uiState,
       towerTypes,
       towerSprites,
+      trapTypes,
+      trapSprites,
       onStartWave: () => {
         audio.unlock();
         startWave();
@@ -308,7 +358,7 @@ const initUi = () => {
         updateUI();
       },
       onToggleSpeed: () => {
-        speedIndex = (speedIndex + 1) % SPEED_STEPS.length;
+        speedIndex = (speedIndex + 1) % GAME_CONFIG.gameplay.speedSteps.length;
         updateUI();
       },
       onSelectTower: (towerId: string | null) => {
@@ -319,14 +369,20 @@ const initUi = () => {
         startTowerDrag(towerId);
         updateUI();
       },
+      onStartDragTrap: (trapId: string) => {
+        startTrapDrag(trapId);
+        updateUI();
+      },
       onUpgradeTower: (towerId: string) => {
         const tower = gameState.towers.find((item) => item.id === towerId);
         if (!tower) return;
         if (tower.level >= MAX_TOWER_LEVEL) return;
         const nextLevel = tower.level + 1;
         const upgradeCost = getTowerUpgradeCost(tower, nextLevel);
-        if (gameState.gold < upgradeCost) return;
-        gameState.gold -= upgradeCost;
+        if (!canAfford(upgradeCost)) return;
+        if (!(isDevEnabled() && getDevConfig().infiniteGold)) {
+          gameState.gold -= upgradeCost;
+        }
         tower.level = nextLevel;
         markStateDirty();
         updateUI();
@@ -410,6 +466,22 @@ const loadSavedGame = () => {
   gameState.soundEnabled = data.soundEnabled ?? gameState.soundEnabled;
   gameState.autoWaveEnabled = data.autoWaveEnabled ?? gameState.autoWaveEnabled;
   gameState.showDamagePopups = data.showDamagePopups ?? gameState.showDamagePopups;
+  gameState.traps = Array.isArray(data.traps)
+    ? data.traps
+        .map((trap) => {
+          const type = trapTypes.find((candidate) => candidate.id === trap.typeId);
+          if (!type) return null;
+          return {
+            id: crypto.randomUUID(),
+            col: trap.col,
+            row: trap.row,
+            type,
+            remaining: trap.remaining ?? type.duration,
+            triggersRemaining: trap.triggersRemaining ?? type.maxTriggers,
+          };
+        })
+        .filter((trap): trap is NonNullable<typeof trap> => Boolean(trap))
+    : [];
   gameState.towers = Array.isArray(data.towers)
     ? data.towers
         .map((tower) => {
@@ -424,6 +496,10 @@ const loadSavedGame = () => {
             rangeBonus:
               type.types.includes("Ranged") && isTreeTile(tower.col, tower.row, pathTiles)
                 ? RANGED_TREE_RANGE_BONUS
+                : 0,
+            damageBonus:
+              type.id === TOWER_IDS.archer && isTreeTile(tower.col, tower.row, pathTiles)
+                ? GAME_CONFIG.gameplay.archerTreeDamageBonus
                 : 0,
             level: clampTowerLevel(tower.level ?? 0),
             targetCol: tower.targetCol,
@@ -446,7 +522,7 @@ const loop = (timestamp: number) => {
   }
   const dt = Math.min((timestamp - lastTime) / 1000, 0.05) || 0;
   lastTime = timestamp;
-  const scaledDt = dt * SPEED_STEPS[speedIndex];
+  const scaledDt = dt * GAME_CONFIG.gameplay.speedSteps[speedIndex];
   const size = getTileSize(canvas, grid);
   let targetIndicator: { x: number; y: number; alpha?: number } | undefined;
   let highlightAlpha = 0;
@@ -486,6 +562,26 @@ const loop = (timestamp: number) => {
         })()
       : null;
 
+  const trapPreview =
+    dragPointer && dragTrapTypeId
+      ? (() => {
+          const rect = canvas.getBoundingClientRect();
+          const localX = dragPointer.x - rect.left;
+          const localY = dragPointer.y - rect.top;
+          if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
+            return null;
+          }
+          const trap = trapTypes.find((item) => item.id === dragTrapTypeId);
+          if (!trap) return null;
+          return {
+            x: localX,
+            y: localY,
+            radius: trap.splashRadiusTiles ?? undefined,
+            spriteId: trap.id,
+          };
+        })()
+      : null;
+
   if (pendingTargetTowerId) {
     const tower = gameState.towers.find((item) => item.id === pendingTargetTowerId);
     if (tower && dragPointer) {
@@ -520,6 +616,7 @@ const loop = (timestamp: number) => {
       cols: grid.cols,
       rows: grid.rows,
       towers: gameState.towers,
+      traps: gameState.traps,
       enemies: gameState.enemies,
       projectiles: gameState.projectiles,
       effects: gameState.effects,
@@ -527,6 +624,7 @@ const loop = (timestamp: number) => {
       highlightedTowerId: highlightTowerId,
       highlightAlpha,
       dragPreview: dragPreview ?? undefined,
+      trapPreview: trapPreview ?? undefined,
       targetIndicator,
     });
     updateUI();
@@ -551,6 +649,7 @@ const loop = (timestamp: number) => {
     startWave();
   }
   updateEnemies(gameState, scaledDt, size, markStateDirty);
+  updateTraps(gameState, scaledDt, size, markStateDirty);
   updateTowers(gameState, scaledDt, size);
   updateProjectiles(
     gameState,
@@ -578,6 +677,7 @@ const loop = (timestamp: number) => {
     cols: grid.cols,
     rows: grid.rows,
     towers: gameState.towers,
+    traps: gameState.traps,
     enemies: gameState.enemies,
     projectiles: gameState.projectiles,
     effects: gameState.effects,
@@ -585,6 +685,7 @@ const loop = (timestamp: number) => {
     highlightedTowerId: highlightTowerId,
     highlightAlpha,
     dragPreview: dragPreview ?? undefined,
+    trapPreview: trapPreview ?? undefined,
     targetIndicator,
   });
 
@@ -599,7 +700,7 @@ const loop = (timestamp: number) => {
 };
 
 const startApp = async () => {
-  renderer = await createPixiRenderer({ canvas, pathTiles, towerSprites, enemySprites });
+  renderer = await createPixiRenderer({ canvas, pathTiles, towerSprites, trapSprites, enemySprites });
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
   document.addEventListener("fullscreenchange", updateFullscreenLayout);
@@ -630,17 +731,29 @@ const startApp = async () => {
     const localY = event.clientY - rect.top;
     if (localX >= 0 && localY >= 0 && localX <= rect.width && localY <= rect.height) {
       const { col, row } = screenToGrid(localX, localY, size);
-      const tower = towerTypes.find((item) => item.id === dragTowerTypeId);
-      if (tower && canPlaceTower(col, row) && gameState.gold >= tower.cost) {
+      if (dragTowerTypeId) {
+        const tower = towerTypes.find((item) => item.id === dragTowerTypeId);
+        if (tower && canPlaceTower(col, row) && canAfford(tower.cost)) {
           const rangeBonus =
             tower.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? RANGED_TREE_RANGE_BONUS : 0;
-        const placedTower = addTower(col, row, tower, rangeBonus);
-        gameState.gold -= tower.cost;
-        recentTowerId = placedTower.id;
-        recentRemainingSeconds = RANGE_DISPLAY_DURATION;
+          const placedTower = addTower(col, row, tower, rangeBonus);
+          if (!(isDevEnabled() && getDevConfig().infiniteGold)) {
+            gameState.gold -= tower.cost;
+          }
+          recentTowerId = placedTower.id;
+          recentRemainingSeconds = RANGE_DISPLAY_DURATION;
+        }
+      } else if (dragTrapTypeId) {
+        const trap = trapTypes.find((item) => item.id === dragTrapTypeId);
+        if (trap && canPlaceTrap(col, row) && canAfford(trap.cost)) {
+          addTrap(col, row, trap);
+          if (!(isDevEnabled() && getDevConfig().infiniteGold)) {
+            gameState.gold -= trap.cost;
+          }
+        }
       }
     }
-    stopTowerDrag();
+    stopDrag();
   });
 
   requestAnimationFrame(loop);

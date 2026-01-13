@@ -1,4 +1,4 @@
-import type { Enemy, EnemyType, PixelSprite, Projectile, Tower } from "../core/types";
+import type { Enemy, EnemyType, PixelSprite, Projectile, Tower, Trap } from "../core/types";
 
 type DragPreview = {
   x: number;
@@ -13,6 +13,7 @@ type FrameData = {
   cols: number;
   rows: number;
   towers: Tower[];
+  traps: Trap[];
   enemies: Enemy[];
   projectiles: Projectile[];
   effects: {
@@ -34,6 +35,12 @@ type FrameData = {
   highlightedTowerId: string | null;
   highlightAlpha: number;
   dragPreview?: DragPreview;
+  trapPreview?: {
+    x: number;
+    y: number;
+    radius?: number;
+    spriteId?: string;
+  };
   targetIndicator?: {
     x: number;
     y: number;
@@ -45,6 +52,7 @@ type RendererOptions = {
   canvas: HTMLCanvasElement;
   pathTiles: Set<string>;
   towerSprites: Record<string, PixelSprite>;
+  trapSprites: Record<string, PixelSprite>;
   enemySprites: Record<string, Record<EnemyType, PixelSprite>>;
 };
 

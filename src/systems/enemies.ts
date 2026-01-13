@@ -1,6 +1,7 @@
 import type { GameState, WaveState } from "../types/core/types";
 import { pathPoints } from "../core/data";
 import { GAME_CONFIG, getFactionForWave } from "../core/config";
+import { getDevConfig, isDevEnabled } from "../core/devFlags";
 import type { EnemyType } from "../types/core/types";
 
 const isBossWave = (waveNumber: number) => waveNumber % GAME_CONFIG.enemy.bossInterval === 0;
@@ -71,7 +72,7 @@ const updateEnemies = (
   size: number,
   onStateChange: () => void,
 ) => {
-  const turnStrength = 10;
+  const turnStrength = GAME_CONFIG.gameplay.enemyTurnStrength;
 
   const clampIndex = (index: number) => Math.max(0, Math.min(index, pathPoints.length - 1));
   const getWaypoint = (index: number) => {
@@ -111,6 +112,12 @@ const updateEnemies = (
   };
 
   for (const enemy of state.enemies) {
+    if ((enemy.slowRemaining ?? 0) > 0) {
+      enemy.slowRemaining = Math.max(0, (enemy.slowRemaining ?? 0) - dt);
+      if (enemy.slowRemaining === 0) {
+        enemy.slowMultiplier = 1;
+      }
+    }
     if ((enemy.knockbackResistRemaining ?? 0) > 0) {
       enemy.knockbackResistRemaining = Math.max(0, (enemy.knockbackResistRemaining ?? 0) - dt);
     }
@@ -130,7 +137,7 @@ const updateEnemies = (
     const dx = target.x - enemy.x;
     const dy = target.y - enemy.y;
     const dist = Math.hypot(dx, dy);
-    if (dist < size * 0.2) {
+    if (dist < size * GAME_CONFIG.gameplay.enemyArrivalThreshold) {
       enemy.targetIndex += 1;
       if (enemy.targetIndex >= pathPoints.length) {
         enemy.reachedEnd = true;
@@ -141,7 +148,8 @@ const updateEnemies = (
     const desiredY = dist === 0 ? 0 : dy / dist;
     enemy.vx = (enemy.vx ?? desiredX) + (desiredX - (enemy.vx ?? 0)) * Math.min(turnStrength * dt, 1);
     enemy.vy = (enemy.vy ?? desiredY) + (desiredY - (enemy.vy ?? 0)) * Math.min(turnStrength * dt, 1);
-    const speed = enemy.speed * size;
+    const slowMultiplier = enemy.slowMultiplier ?? 1;
+    const speed = enemy.speed * size * slowMultiplier;
     enemy.x += (enemy.vx ?? 0) * speed * dt;
     enemy.y += (enemy.vy ?? 0) * speed * dt;
 
@@ -150,7 +158,7 @@ const updateEnemies = (
     if (knockbackRemaining > 0.001) {
       clampToPathSegment(enemy);
       const pathDir = getPathDirection(enemy.targetIndex, desiredX, desiredY);
-      const step = Math.min(knockbackRemaining, size * 8 * dt);
+      const step = Math.min(knockbackRemaining, size * GAME_CONFIG.gameplay.knockbackSpeed * dt);
       enemy.x -= pathDir.x * step;
       enemy.y -= pathDir.y * step;
       clampToPathSegment(enemy);
@@ -164,7 +172,7 @@ const updateEnemies = (
           const px = (enemy.x ?? prev.x) - prev.x;
           const py = (enemy.y ?? prev.y) - prev.y;
           const t = (px * segX + py * segY) / segLenSq;
-          if (t <= 0.02) {
+          if (t <= GAME_CONFIG.gameplay.backtrackThreshold) {
             enemy.targetIndex -= 1;
           }
         }
@@ -184,17 +192,25 @@ const updateEnemies = (
     const enemy = state.enemies[i];
     if (enemy.reachedEnd) {
       state.enemies.splice(i, 1);
-      const lifeLoss = enemy.type === "boss" || enemy.isBoss ? 3 : 1;
-      state.lives = Math.max(0, state.lives - lifeLoss);
+      const devConfig = getDevConfig();
+      const godMode = devConfig.godMode;
+      const isGodMode = isDevEnabled() && godMode.enabled;
       const wave = state.waves.find((item) => item.id === enemy.waveId);
+      if (!isGodMode || !godMode.invulnerableBase) {
+        const lifeLoss =
+          enemy.type === "boss" || enemy.isBoss ? GAME_CONFIG.gameplay.bossLifeLoss : 1;
+        state.lives = Math.max(0, state.lives - lifeLoss);
+        if (wave) {
+          wave.livesLost = true;
+        }
+      }
       if (wave) {
         wave.remainingEnemies = Math.max(0, wave.remainingEnemies - 1);
-        wave.livesLost = true;
       }
       onStateChange();
     } else if (enemy.hp <= 0) {
       state.enemies.splice(i, 1);
-      state.gold += 6;
+      state.gold += GAME_CONFIG.gameplay.killReward;
       const wave = state.waves.find((item) => item.id === enemy.waveId);
       if (wave) {
         wave.remainingEnemies = Math.max(0, wave.remainingEnemies - 1);

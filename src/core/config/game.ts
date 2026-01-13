@@ -1,6 +1,1 @@
-const GRID_CONFIG = {
-  cols: 16,
-  rows: 9,
-};
-
-export { GRID_CONFIG };
+export { GAMEPLAY_CONFIG, GRID_CONFIG } from "./master";

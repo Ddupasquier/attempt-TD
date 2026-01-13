@@ -95,6 +95,7 @@ body.is-fullscreen .game-stage {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: calc(100% - 28px);
   transition: transform 0.2s ease, opacity 0.2s ease;
   pointer-events: auto;
 }
@@ -132,6 +133,12 @@ body.is-fullscreen .game-stage {
   display: none;
 }
 
+.hud-body {
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+
 .hud-section {
   background:
     linear-gradient(160deg, rgba(58, 44, 38, 0.96), rgba(30, 23, 20, 0.96)),
@@ -158,7 +165,8 @@ body.is-fullscreen .game-stage {
   gap: 5px;
 }
 
-.tower-card {
+.tower-card,
+.trap-card {
   border: 1px solid transparent;
   border-radius: 12px;
   padding: 5px;
@@ -179,14 +187,22 @@ body.is-fullscreen .game-stage {
   transform: translateY(-1px);
 }
 
-.tower-card h4 {
+.trap-card.active {
+  border-color: rgba(201, 151, 90, 0.6);
+  box-shadow: 0 0 0 2px rgba(201, 151, 90, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.tower-card h4,
+.trap-card h4 {
   margin: 0;
   font-size: 0.7rem;
   font-weight: 700;
   color: #f8e7c4;
 }
 
-.tower-card p {
+.tower-card p,
+.trap-card p {
   margin: 0;
   font-size: 0.62rem;
   opacity: 0.8;
@@ -212,6 +228,10 @@ body.is-fullscreen .game-stage {
 }
 
 .tower-card.active .tower-card__details {
+  display: flex;
+}
+
+.trap-card.active .tower-card__details {
   display: flex;
 }
 

@@ -2,9 +2,17 @@ import type { GameState } from "../types/core/types";
 import { TOWER_IDS } from "../constants/towerIds";
 import { tileCenter } from "../core/geometry";
 import { getTowerStats } from "../core/towerLevels";
+import { GAME_CONFIG } from "../core/config";
+import { getDevConfig, isDevEnabled } from "../core/devFlags";
 
 const updateTowers = (state: GameState, dt: number, size: number) => {
   for (const tower of state.towers) {
+    if (isDevEnabled()) {
+      const devConfig = getDevConfig();
+      if (devConfig.godMode.enabled && devConfig.godMode.noCooldowns) {
+        tower.cooldown = 0;
+      }
+    }
     tower.cooldown -= dt;
     if (tower.cooldown > 0) continue;
 
@@ -26,7 +34,7 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
         y: center.y,
         targetX: target.x,
         targetY: target.y,
-        speed: 3 * size,
+        speed: GAME_CONFIG.gameplay.catapultProjectileSpeed * size,
         damage,
         color: "#1a1a1a",
         towerTypeId: tower.type.id,
@@ -34,7 +42,7 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
         originY: center.y,
         maxRange: stats.range * size,
         knockbackDistance: 0,
-        splashRadius: size * 1,
+        splashRadius: size * GAME_CONFIG.gameplay.catapultSplashRadiusTiles,
         isCrit,
       });
       tower.cooldown = stats.rate;
@@ -66,7 +74,7 @@ const updateTowers = (state: GameState, dt: number, size: number) => {
       x: center.x,
       y: center.y,
       target,
-      speed: 4.5 * size,
+      speed: GAME_CONFIG.gameplay.projectileSpeed * size,
       damage,
       color: tower.type.color,
       towerTypeId: tower.type.id,

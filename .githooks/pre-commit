@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if git diff --cached --name-only | grep -q "^src/core/isDev\\.ts$"; then
+  echo "Error: src/core/isDev.ts is private and must not be committed."
+  exit 1
+fi

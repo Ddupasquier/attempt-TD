@@ -1,6 +1,6 @@
 export { createAudioSystem } from "./audio";
 export { FACTION_PROGRESSION, GAME_CONFIG, getFactionForWave } from "./config";
-export { assertTowerRanges, enemySprites, grid, pathPoints, towerSprites, towerTypes } from "./data";
+export { assertTowerRanges, enemySprites, grid, pathPoints, trapSprites, trapTypes, towerSprites, towerTypes } from "./data";
 export { getTileSize, screenToGrid, tileCenter } from "./geometry";
 export { buildPathTiles } from "./path";
 export { createInitialState } from "./state";

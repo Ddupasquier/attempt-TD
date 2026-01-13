@@ -1,11 +1,14 @@
 <script lang="ts">
   import { UI_TEXT } from "../text";
   import TowerCard from "./TowerCard.svelte";
+  import TrapCard from "./TrapCard.svelte";
   import type { HudOverlayProps } from "../../types/ui/components/HudOverlay.types";
 
   const {
     towerTypes,
     towerSprites,
+    trapTypes,
+    trapSprites,
     selectedTowerTypeId,
     gold,
     lives,
@@ -15,9 +18,15 @@
     onToggle,
     onSelectTower,
     onStartDragTower,
+    onStartDragTrap,
   } = $props<HudOverlayProps>();
 
   const toggleLabel = $derived(isCollapsed ? UI_TEXT.hudFabLabel : UI_TEXT.hudToggleHide);
+  let selectedTrapTypeId = $state<string | null>(null);
+
+  const handleSelectTrap = (trapId: string | null) => {
+    selectedTrapTypeId = trapId;
+  };
 </script>
 
 <div class="hud-overlay">
@@ -38,6 +47,21 @@
             isActive={selectedTowerTypeId === tower.id}
             onSelect={onSelectTower}
             onStartDrag={onStartDragTower}
+          />
+        {/each}
+      </div>
+    </div>
+    <div class="hud-section">
+      <div class="label">{UI_TEXT.trapLabel}</div>
+      <div class="tower-hint">{UI_TEXT.hintTrapDrag}</div>
+      <div class="tower-list">
+        {#each trapTypes as trap (trap.id)}
+          <TrapCard
+            trap={trap}
+            sprite={trapSprites[trap.id]}
+            isActive={selectedTrapTypeId === trap.id}
+            onSelect={handleSelectTrap}
+            onStartDrag={onStartDragTrap}
           />
         {/each}
       </div>

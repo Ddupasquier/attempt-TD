@@ -12,6 +12,7 @@ export type * from "./ui/components/DefeatModal.types";
 export type * from "./ui/components/Modal.types";
 export type * from "./ui/components/ResetConfirmModal.types";
 export type * from "./ui/components/TowerCard.types";
+export type * from "./ui/components/TrapCard.types";
 export type * from "./ui/components/TowerUpgradePopup.types";
 export type * from "./ui/components/icons/AutoIcon.types";
 export type * from "./ui/components/icons/FullscreenIcon.types";

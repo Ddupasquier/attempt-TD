@@ -10,6 +10,7 @@
     spellScrollTypes,
     spellScrollSprites,
     spellScrollCooldowns,
+    defenseCounts,
     selectedDefenseTypeId,
     gold,
     hp,
@@ -23,6 +24,18 @@
   } = $props<HudOverlayProps>();
 
   const toggleLabel = $derived(isCollapsed ? UI_TEXT.hudFabLabel : UI_TEXT.hudToggleHide);
+  const getDefenseCost = (defenseId: string, baseCost: number) => {
+    const placed = defenseCounts[defenseId] ?? 0;
+    return baseCost + placed * 5;
+  };
+  const sortedDefenses = $derived(
+    [...defenseTypes].sort(
+      (a, b) => getDefenseCost(a.id, a.cost) - getDefenseCost(b.id, b.cost),
+    ),
+  );
+  const sortedSpellScrolls = $derived(
+    [...spellScrollTypes].sort((a, b) => a.cost - b.cost),
+  );
   let selectedSpellScrollTypeId = $state<string | null>(null);
 
   const handleSelectSpellScroll = (spellScrollId: string | null) => {
@@ -39,14 +52,15 @@
   <div class="hud hud-body" class:is-collapsed={isCollapsed}>
     <div class="hud-section">
       <div class="label">{UI_TEXT.towerLabel}</div>
-      <div class="tower-hint">{UI_TEXT.hintTowerSelect}</div>
-      <div class="tower-list">
-        {#each defenseTypes as defense (defense.id)}
+      <div class="defense-hint">{UI_TEXT.hintTowerSelect}</div>
+      <div class="defense-list">
+        {#each sortedDefenses as defense (defense.id)}
           <DefenseCard
             defense={defense}
             sprite={defenseSprites[defense.id]}
             isActive={selectedDefenseTypeId === defense.id}
-            canAfford={gold >= defense.cost}
+            cost={getDefenseCost(defense.id, defense.cost)}
+            canAfford={gold >= getDefenseCost(defense.id, defense.cost)}
             onSelect={onSelectDefense}
             onStartDrag={onStartDragDefense}
           />
@@ -55,9 +69,9 @@
     </div>
     <div class="hud-section">
       <div class="label">{UI_TEXT.trapLabel}</div>
-      <div class="tower-hint">{UI_TEXT.hintTrapDrag}</div>
-      <div class="tower-list">
-        {#each spellScrollTypes as spellScroll (spellScroll.id)}
+      <div class="spell-scroll-hint">{UI_TEXT.hintTrapDrag}</div>
+      <div class="spell-scroll-list">
+        {#each sortedSpellScrolls as spellScroll (spellScroll.id)}
           <SpellScrollCard
             spellScroll={spellScroll}
             sprite={spellScrollSprites[spellScroll.id]}

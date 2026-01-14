@@ -5,6 +5,15 @@ import { DEFENSE_IDS } from "../constants/defenseIds";
 import { getSiegeDamagePopupStyle } from "../core/devFlags";
 import { applyDamageModifiers } from "../core/combat";
 
+const applySlow = (
+  foe: GameState["foes"][number],
+  multiplier: number,
+  duration: number,
+) => {
+  foe.slowRemaining = Math.max(foe.slowRemaining ?? 0, duration);
+  foe.slowMultiplier = Math.min(foe.slowMultiplier ?? 1, multiplier);
+};
+
 const updateProjectiles = (
   state: GameState,
   dt: number,
@@ -84,6 +93,9 @@ const updateProjectiles = (
               style?.sizeMult ?? 1,
             );
           }
+          if (bolt.slowMultiplier && bolt.slowDuration) {
+            applySlow(bolt.target, bolt.slowMultiplier, bolt.slowDuration);
+          }
         } else {
           const damage = applyDamageModifiers(
             bolt.damage,
@@ -110,6 +122,9 @@ const updateProjectiles = (
               style?.duration ?? 0.6,
               style?.sizeMult ?? 1,
             );
+          }
+          if (bolt.slowMultiplier && bolt.slowDuration) {
+            applySlow(bolt.target, bolt.slowMultiplier, bolt.slowDuration);
           }
         }
       } else if (bolt.splashRadius) {

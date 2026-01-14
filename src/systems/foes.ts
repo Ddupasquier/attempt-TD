@@ -1,4 +1,12 @@
-import type { GameState, WaveState, FoeType } from "../types/core/types";
+import type {
+  DamageGroup,
+  DamageGroupResistances,
+  DamageResistances,
+  DamageType,
+  GameState,
+  WaveState,
+  FoeType,
+} from "../types/core/types";
 import { pathPoints } from "../core/data";
 import { GAME_CONFIG, getFactionForWave } from "../core/config";
 import { getDevConfig, isDevEnabled } from "../core/devFlags";
@@ -7,6 +15,34 @@ const isBossWave = (waveNumber: number) => waveNumber % GAME_CONFIG.foe.bossInte
 
 const getFactionWaveIndex = (waveNumber: number) =>
   ((waveNumber - 1) % GAME_CONFIG.foe.bossInterval) + 1;
+
+const mergeResistances = (
+  base?: DamageResistances,
+  extra?: DamageResistances,
+): DamageResistances | undefined => {
+  if (!base && !extra) return undefined;
+  const merged: DamageResistances = { ...(base ?? {}) };
+  for (const [key, value] of Object.entries(extra ?? {})) {
+    const damageType = key as DamageType;
+    const prior = merged[damageType] ?? 1;
+    merged[damageType] = prior * (value ?? 1);
+  }
+  return merged;
+};
+
+const mergeGroupResistances = (
+  base?: DamageGroupResistances,
+  extra?: DamageGroupResistances,
+): DamageGroupResistances | undefined => {
+  if (!base && !extra) return undefined;
+  const merged: DamageGroupResistances = { ...(base ?? {}) };
+  for (const [key, value] of Object.entries(extra ?? {})) {
+    const group = key as DamageGroup;
+    const prior = merged[group] ?? 1;
+    merged[group] = prior * (value ?? 1);
+  }
+  return merged;
+};
 
 const pickFoeType = (wave: WaveState, factionId: string): FoeType => {
   const factionWave = getFactionWaveIndex(wave.waveNumber);
@@ -23,7 +59,7 @@ const pickFoeType = (wave: WaveState, factionId: string): FoeType => {
     roll -= entry.weight;
     if (roll <= 0) return entry.type;
   }
-  return "raider";
+  return "grunt";
 };
 
 const spawnFoe = (state: GameState, wave: WaveState) => {
@@ -32,6 +68,8 @@ const spawnFoe = (state: GameState, wave: WaveState) => {
   const faction = getFactionForWave(wave.waveNumber);
   const type = pickFoeType(wave, faction.id);
   const typeStats = GAME_CONFIG.foe.types[type];
+  const factionResistances = GAME_CONFIG.foe.factionResistances?.[faction.id];
+  const factionGroupResistances = GAME_CONFIG.foe.factionGroupResistances?.[faction.id];
   state.foes.push({
     id: crypto.randomUUID(),
     hp: Math.round(hp * typeStats.hpMultiplier),
@@ -42,8 +80,8 @@ const spawnFoe = (state: GameState, wave: WaveState) => {
     type,
     targetIndex: 1,
     sizeScale: typeStats.sizeScale,
-    damageResistances: typeStats.damageResistances,
-    damageGroupResistances: typeStats.damageGroupResistances,
+    damageResistances: mergeResistances(typeStats.damageResistances, factionResistances),
+    damageGroupResistances: mergeGroupResistances(typeStats.damageGroupResistances, factionGroupResistances),
   });
   wave.remainingFoes += 1;
 };
@@ -52,6 +90,8 @@ const spawnBossFoe = (state: GameState, wave: WaveState) => {
   const baseHp = GAME_CONFIG.foe.baseHp + wave.waveNumber * GAME_CONFIG.foe.hpPerWave;
   const baseSpeed = GAME_CONFIG.foe.baseSpeed + wave.waveNumber * GAME_CONFIG.foe.speedPerWave;
   const faction = getFactionForWave(wave.waveNumber);
+  const factionResistances = GAME_CONFIG.foe.factionResistances?.[faction.id];
+  const factionGroupResistances = GAME_CONFIG.foe.factionGroupResistances?.[faction.id];
   state.foes.push({
     id: crypto.randomUUID(),
     hp: Math.round(baseHp * GAME_CONFIG.foe.bossHpMultiplier),
@@ -63,8 +103,11 @@ const spawnBossFoe = (state: GameState, wave: WaveState) => {
     targetIndex: 1,
     isBoss: true,
     sizeScale: GAME_CONFIG.foe.bossScale,
-    damageResistances: GAME_CONFIG.foe.bossDamageResistances,
-    damageGroupResistances: GAME_CONFIG.foe.bossDamageGroupResistances,
+    damageResistances: mergeResistances(GAME_CONFIG.foe.bossDamageResistances, factionResistances),
+    damageGroupResistances: mergeGroupResistances(
+      GAME_CONFIG.foe.bossDamageGroupResistances,
+      factionGroupResistances,
+    ),
   });
   wave.remainingFoes += 1;
 };

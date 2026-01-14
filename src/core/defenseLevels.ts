@@ -11,14 +11,17 @@ const clampDefenseLevel = (level: number) => clamp(level, 0, MAX_DEFENSE_LEVEL);
 
 const getDefenseStatsAtLevel = (defense: Defense, level: number) => {
   const clampedLevel = clampDefenseLevel(level);
-  const stats = DEFENSE_LEVEL_STATS[clampedLevel] ?? DEFENSE_LEVEL_STATS[0];
+  const levelStats = defense.type.levelStatsOverrides ?? DEFENSE_LEVEL_STATS;
+  const stats =
+    levelStats[clampedLevel] ?? levelStats[levelStats.length - 1] ?? DEFENSE_LEVEL_STATS[0];
   const baseRange = defense.type.range + defense.rangeBonus;
   const baseDamage = defense.type.damage * (1 + (defense.damageBonus ?? 0));
+  const levelDamageBonus = defense.type.levelDamageBonuses?.[clampedLevel] ?? 0;
   return {
     level: clampedLevel,
     range: baseRange * stats.rangeMult,
     rate: defense.type.rate * stats.rateMult,
-    damage: baseDamage * stats.damageMult,
+    damage: (baseDamage + levelDamageBonus) * stats.damageMult,
     critChance: defense.type.critChance,
     critMultiplier: defense.type.critMultiplier,
     knockback: defense.type.knockback * stats.knockbackMult,

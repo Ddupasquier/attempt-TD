@@ -70,6 +70,7 @@
     {spellScrollTypes}
     {spellScrollSprites}
     spellScrollCooldowns={$uiState.spellScrollCooldowns}
+    defenseCounts={$uiState.defenseCounts}
     selectedDefenseTypeId={$uiState.selectedDefenseTypeId}
     gold={$uiState.gold}
     hp={$uiState.hp}

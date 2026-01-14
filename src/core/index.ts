@@ -1,5 +1,5 @@
 export { createAudioSystem } from "./audio";
-export { FACTION_PROGRESSION, GAME_CONFIG, getFactionForWave } from "./config";
+export { FACTION_PROGRESSION, FOE_FACTION_DEFINITIONS, GAME_CONFIG, getFactionForWave } from "./config";
 export { assertDefenseRanges, foeSprites, grid, pathPoints, spellScrollSprites, spellScrollTypes, defenseSprites, defenseTypes } from "./data";
 export { getTileSize, screenToGrid, tileCenter } from "./geometry";
 export { buildPathTiles } from "./path";

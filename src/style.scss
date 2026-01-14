@@ -159,14 +159,15 @@ body.is-fullscreen .game-stage {
   font-family: "Press Start 2P", "Space Grotesk", sans-serif;
 }
 
-.tower-list {
+.defense-list,
+.spell-scroll-list {
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
-.tower-card,
-.trap-card {
+.defense-card,
+.spell-scroll-card {
   border: 1px solid transparent;
   border-radius: 12px;
   padding: 5px;
@@ -182,40 +183,40 @@ body.is-fullscreen .game-stage {
   position: relative;
 }
 
-.tower-card:disabled {
+.defense-card:disabled {
   cursor: not-allowed;
   opacity: 0.45;
   filter: grayscale(0.5);
 }
 
-.tower-card:disabled .tower-card__cost,
-.tower-card:disabled .tower-card__types,
-.tower-card:disabled p {
+.defense-card:disabled .defense-card__cost,
+.defense-card:disabled .defense-card__types,
+.defense-card:disabled p {
   color: rgba(244, 239, 230, 0.5);
 }
 
-.tower-card.active {
+.defense-card.active {
   border-color: var(--accent-2);
   box-shadow: 0 0 0 2px rgba(127, 209, 185, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   transform: translateY(-1px);
 }
 
-.trap-card.active {
+.spell-scroll-card.active {
   border-color: rgba(201, 151, 90, 0.6);
   box-shadow: 0 0 0 2px rgba(201, 151, 90, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   transform: translateY(-1px);
 }
 
-.tower-card h4,
-.trap-card h4 {
+.defense-card h4,
+.spell-scroll-card h4 {
   margin: 0;
   font-size: 0.7rem;
   font-weight: 700;
   color: #f8e7c4;
 }
 
-.tower-card p,
-.trap-card p {
+.defense-card p,
+.spell-scroll-card p {
   margin: 0;
   font-size: 0.62rem;
   opacity: 0.8;
@@ -223,45 +224,51 @@ body.is-fullscreen .game-stage {
   color: rgba(244, 239, 230, 0.75);
 }
 
-.tower-card__title-row {
+.defense-card__title-row,
+.spell-scroll-card__title-row {
   display: none;
 }
 
-.tower-card__types {
+.defense-card__types,
+.spell-scroll-card__types {
   font-size: 0.48rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
 }
 
-.tower-card__details {
+.defense-card__details,
+.spell-scroll-card__details {
   display: none;
   flex-direction: column;
   gap: 1px;
 }
 
-.tower-card.active .tower-card__details {
+.defense-card.active .defense-card__details {
   display: flex;
 }
 
-.trap-card.active .tower-card__details {
+.spell-scroll-card.active .spell-scroll-card__details {
   display: flex;
 }
 
-.tower-sprite {
+.defense-sprite,
+.spell-scroll-sprite {
   border-radius: 6px;
   background: transparent;
   border: none;
   image-rendering: pixelated;
 }
 
-.tower-card__content {
+.defense-card__content,
+.spell-scroll-card__content {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.tower-card__cost {
+.defense-card__cost,
+.spell-scroll-card__cost {
   color: var(--accent);
   font-weight: 700;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
@@ -320,7 +327,8 @@ button + button {
   display: none;
 }
 
-.tower-hint {
+.defense-hint,
+.spell-scroll-hint {
   font-size: 0.6rem;
   color: rgba(255, 255, 255, 0.6);
   margin-bottom: 4px;
@@ -526,7 +534,7 @@ button + button {
   place-items: center;
 }
 
-.trap-card.is-counting::after {
+.spell-scroll-card.is-counting::after {
   content: attr(data-countdown);
   position: absolute;
   top: -4px;
@@ -567,7 +575,7 @@ button + button {
   }
 }
 
-.tower-upgrade {
+.defense-upgrade {
   position: absolute;
   width: 190px;
   padding: 10px;
@@ -581,14 +589,14 @@ button + button {
   pointer-events: auto;
 }
 
-.tower-upgrade__header {
+.defense-upgrade__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
 }
 
-.tower-upgrade__title {
+.defense-upgrade__title {
   font-family: "Press Start 2P", "Space Grotesk", sans-serif;
   font-size: 0.5rem;
   letter-spacing: 0.12em;
@@ -596,51 +604,66 @@ button + button {
   text-transform: uppercase;
 }
 
-.tower-upgrade__level {
+.defense-upgrade__level {
   font-size: 0.58rem;
   color: rgba(255, 255, 255, 0.75);
 }
 
-.tower-upgrade__body {
+.defense-upgrade__name {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #f5d8a9;
+  margin-bottom: 4px;
+}
+
+.defense-upgrade__types {
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 6px;
+}
+
+.defense-upgrade__body {
   display: flex;
   flex-direction: column;
   gap: 5px;
   font-size: 0.62rem;
 }
 
-.tower-upgrade__prompt {
+.defense-upgrade__prompt {
   color: rgba(255, 255, 255, 0.8);
 }
 
-.tower-upgrade__cost {
+.defense-upgrade__cost {
   font-weight: 700;
   color: var(--accent);
 }
 
-.tower-upgrade__target {
+.defense-upgrade__target {
   font-weight: 700;
   color: rgba(255, 255, 255, 0.78);
   margin-top: 2px;
 }
 
-.tower-upgrade__stats {
+.defense-upgrade__stats {
   display: grid;
   gap: 3px;
   margin-top: 4px;
 }
 
-.tower-upgrade__stat {
+.defense-upgrade__stat {
   display: flex;
   justify-content: space-between;
   gap: 8px;
   color: rgba(255, 255, 255, 0.75);
 }
 
-.tower-upgrade__value {
+.defense-upgrade__value {
   color: #f8e7c4;
 }
 
-.tower-upgrade__button {
+.defense-upgrade__button {
   margin-top: 8px;
   width: 100%;
   padding: 7px;
@@ -648,7 +671,7 @@ button + button {
   border-radius: 10px;
 }
 
-.tower-upgrade__button--danger {
+.defense-upgrade__button--danger {
   background: linear-gradient(180deg, #e87a6b 0%, #b94b3e 100%);
   border-color: #642a23;
   box-shadow: 0 6px 0 #6c2f27;

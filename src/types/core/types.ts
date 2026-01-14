@@ -37,6 +37,19 @@ type DefenseType = {
   critChance: number;
   critMultiplier: number;
   knockback: number;
+  levelStatsOverrides?: Array<{
+    damageMult: number;
+    rangeMult: number;
+    rateMult: number;
+    knockbackMult: number;
+  }>;
+  levelDamageBonuses?: number[];
+  onHitSlow?: {
+    minLevel: number;
+    multiplier: number;
+    duration: number;
+  };
+  splashRadiusTiles?: number;
   auraRangeTiles?: number;
   auraBonuses?: DefenseAuraBonuses;
   damageResistances?: DamageResistances;
@@ -44,6 +57,8 @@ type DefenseType = {
   color: string;
   description: string;
 };
+
+type SpellScrollSound = "shock" | "boom" | "nuke" | "glue";
 
 type SpellScrollType = {
   id: string;
@@ -60,6 +75,7 @@ type SpellScrollType = {
   slowMultiplier?: number;
   slowDuration?: number;
   killsAll?: boolean;
+  soundEffect?: SpellScrollSound;
   description: string;
 };
 
@@ -77,14 +93,22 @@ type Defense = {
 };
 
 type FactionId =
-  | "humans"
-  | "orcs"
-  | "elves"
-  | "undead"
-  | "dwarves"
-  | "spirits"
-  | "demons"
-  | "dragons";
+  | "necrotic-legion"
+  | "vampiric-court"
+  | "infernal-contract"
+  | "abyssal-horde"
+  | "draconic-brood"
+  | "elemental-conclave"
+  | "goblin-warrens"
+  | "orcish-warclans"
+  | "giantkin-tribes"
+  | "arcane-cabal"
+  | "illithid-dominion"
+  | "feywild-host"
+  | "verdant-circle"
+  | "yuan-ti-coil"
+  | "eldritch-beyond"
+  | "construct-imperium";
 
 type Foe = {
   id: string;
@@ -124,7 +148,7 @@ type WaveState = {
   hpLost?: boolean;
 };
 
-type FoeType = "skirmisher" | "raider" | "bruiser" | "bulwark" | "elite" | "boss";
+type FoeType = "swarm" | "grunt" | "tank" | "elite" | "boss";
 
 type Projectile = {
   x: number;
@@ -143,6 +167,8 @@ type Projectile = {
   knockbackDistance: number;
   splashRadius?: number;
   isCrit?: boolean;
+  slowMultiplier?: number;
+  slowDuration?: number;
 };
 
 type SpellScroll = {
@@ -327,6 +353,7 @@ export type {
   SplashEffect,
   DamagePopup,
   SpellScroll,
+  SpellScrollSound,
   SpellScrollType,
   Defense,
   DefenseType,

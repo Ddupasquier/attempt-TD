@@ -6,6 +6,7 @@ type HudOverlayProps = {
   spellScrollTypes: SpellScrollType[];
   spellScrollSprites: Record<string, PixelSprite>;
   spellScrollCooldowns: Record<string, number>;
+  defenseCounts: Record<string, number>;
   selectedDefenseTypeId: string | null;
   gold: number;
   hp: number;

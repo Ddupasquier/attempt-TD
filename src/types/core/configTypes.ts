@@ -1,6 +1,7 @@
 import type {
   DamageGroupResistances,
   DamageResistances,
+  FactionId,
   Grid,
   DefenseType,
   SpellScrollType,
@@ -67,7 +68,7 @@ type GameConfig = {
     bossKnockbackResistSeconds: number;
     bossKnockbackDistanceMultiplier: number;
     types: {
-      skirmisher: {
+      swarm: {
         hpMultiplier: number;
         speedMultiplier: number;
         sizeScale: number;
@@ -76,7 +77,7 @@ type GameConfig = {
         damageResistances?: DamageResistances;
         damageGroupResistances?: DamageGroupResistances;
       };
-      raider: {
+      grunt: {
         hpMultiplier: number;
         speedMultiplier: number;
         sizeScale: number;
@@ -85,16 +86,7 @@ type GameConfig = {
         damageResistances?: DamageResistances;
         damageGroupResistances?: DamageGroupResistances;
       };
-      bruiser: {
-        hpMultiplier: number;
-        speedMultiplier: number;
-        sizeScale: number;
-        knockbackResistSeconds: number;
-        knockbackDistanceMultiplier: number;
-        damageResistances?: DamageResistances;
-        damageGroupResistances?: DamageGroupResistances;
-      };
-      bulwark: {
+      tank: {
         hpMultiplier: number;
         speedMultiplier: number;
         sizeScale: number;
@@ -117,14 +109,16 @@ type GameConfig = {
     bossDamageGroupResistances?: DamageGroupResistances;
     typeSpawnWeights: Array<{
       maxWave: number;
-      weights: Partial<Record<"skirmisher" | "raider" | "bruiser" | "bulwark" | "elite", number>>;
+      weights: Partial<Record<"swarm" | "grunt" | "tank" | "elite", number>>;
     }>;
+    factionResistances?: Partial<Record<FactionId, DamageResistances>>;
+    factionGroupResistances?: Partial<Record<FactionId, DamageGroupResistances>>;
     typeSpawnWeightsByFaction: Partial<
       Record<
-        "humans" | "orcs" | "elves" | "undead" | "dwarves" | "spirits" | "demons" | "dragons",
+        FactionId,
         Array<{
           maxWave: number;
-          weights: Partial<Record<"skirmisher" | "raider" | "bruiser" | "bulwark" | "elite", number>>;
+          weights: Partial<Record<"swarm" | "grunt" | "tank" | "elite", number>>;
         }>
       >
     >;

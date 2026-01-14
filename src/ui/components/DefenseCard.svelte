@@ -2,7 +2,8 @@
   import { spriteCanvas } from "../spriteCanvas";
   import type { DefenseCardProps } from "../../types/ui/components/DefenseCard.types";
 
-  const { defense, sprite, isActive, canAfford, onSelect, onStartDrag } = $props<DefenseCardProps>();
+  const { defense, sprite, isActive, canAfford, cost, onSelect, onStartDrag } =
+    $props<DefenseCardProps>();
 
   const dragThreshold = 6;
   let suppressClick = false;
@@ -51,19 +52,19 @@
 </script>
 
 <button
-  class="tower-card"
+  class="defense-card"
   class:active={isActive}
   type="button"
   disabled={!canAfford}
   onclick={handleClick}
   onpointerdown={handlePointerDown}
 >
-  <canvas class="tower-sprite" width="36" height="36" use:spriteCanvas={sprite ?? null}></canvas>
-  <div class="tower-card__content">
+  <canvas class="defense-sprite" width="36" height="36" use:spriteCanvas={sprite ?? null}></canvas>
+  <div class="defense-card__content">
     <h4>{defense.name}</h4>
-    <span class="tower-card__cost">({defense.cost}g)</span>
-    <div class="tower-card__details">
-      <div class="tower-card__types">{defense.types.join(" • ")}</div>
+    <span class="defense-card__cost">({cost}g)</span>
+    <div class="defense-card__details">
+      <div class="defense-card__types">{defense.types.join(" • ")}</div>
       <p>{defense.description}</p>
     </div>
   </div>

@@ -1,16 +1,11 @@
 import { DEFENSE_IDS } from "../constants/defenseIds";
-import { SPELL_SCROLL_IDS } from "../constants/spellScrollIds";
+import type { SpellScrollSound } from "../types/core/types";
 import type { ToneConfig } from "../types/core/audioTypes";
+import { getDefenseTonePreset } from "./audioConfig";
 
 const createAudioSystem = () => {
   let audioCtx: AudioContext | null = null;
   let isUnlocked = false;
-
-  const tonePresets: Record<string, Omit<ToneConfig, "duration">> = {
-    [DEFENSE_IDS.wizard]: { freq: 520, type: "triangle", gain: 0.06 },
-    [DEFENSE_IDS.ranger]: { freq: 740, type: "square", gain: 0.05 },
-    [DEFENSE_IDS.fighter]: { freq: 360, type: "square", gain: 0.07 },
-  };
 
   const ensureAudioContext = () => {
     if (!audioCtx) {
@@ -119,29 +114,32 @@ const createAudioSystem = () => {
       playCrash();
       return;
     }
-    const tone = tonePresets[defenseTypeId];
-    if (!tone) return;
+    const tone = getDefenseTonePreset(defenseTypeId);
     playTone({ ...tone, duration: 0.08 });
   };
 
-  const playSpellScrollSound = (scrollId: string, soundEnabled: boolean) => {
+  const playSpellScrollSound = (
+    soundEffect: SpellScrollSound | undefined,
+    soundEnabled: boolean,
+  ) => {
     if (!soundEnabled) return;
+    if (!soundEffect) return;
     if (!isUnlocked) return;
     ensureAudioContext();
     if (!audioCtx) return;
-    if (scrollId === SPELL_SCROLL_IDS.shock) {
+    if (soundEffect === "shock") {
       playNoise(0.12, 0.08, "bandpass", 1200);
       return;
     }
-    if (scrollId === SPELL_SCROLL_IDS.bomb) {
+    if (soundEffect === "boom") {
       playBoom();
       return;
     }
-    if (scrollId === SPELL_SCROLL_IDS.nuke) {
+    if (soundEffect === "nuke") {
       playBigBoom();
       return;
     }
-    if (scrollId === SPELL_SCROLL_IDS.glue) {
+    if (soundEffect === "glue") {
       playTone({ freq: 160, duration: 0.08, type: "sine", gain: 0.05 });
     }
   };

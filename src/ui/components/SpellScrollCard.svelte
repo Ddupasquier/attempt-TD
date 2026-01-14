@@ -51,7 +51,7 @@
 </script>
 
 <button
-  class="trap-card"
+  class="spell-scroll-card"
   class:active={isActive}
   class:is-counting={cooldownRemaining > 0}
   data-countdown={
@@ -65,12 +65,12 @@
   onclick={handleClick}
   onpointerdown={handlePointerDown}
 >
-  <canvas class="tower-sprite" width="36" height="36" use:spriteCanvas={sprite ?? null}></canvas>
-  <div class="tower-card__content">
+  <canvas class="spell-scroll-sprite" width="36" height="36" use:spriteCanvas={sprite ?? null}></canvas>
+  <div class="spell-scroll-card__content">
     <h4>{spellScroll.name}</h4>
-    <span class="tower-card__cost">({spellScroll.cost}g)</span>
-    <div class="tower-card__details">
-      <div class="tower-card__types">{spellScroll.types.join(" • ")}</div>
+    <span class="spell-scroll-card__cost">({spellScroll.cost}g)</span>
+    <div class="spell-scroll-card__details">
+      <div class="spell-scroll-card__types">{spellScroll.types.join(" • ")}</div>
       <p>{spellScroll.description}</p>
     </div>
   </div>

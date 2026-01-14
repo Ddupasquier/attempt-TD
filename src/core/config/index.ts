@@ -1,5 +1,5 @@
 import type { GameConfig } from "../../types/core/configTypes";
-import { FOE_CONFIG } from "./foes";
+import { FOE_CONFIG, FOE_FACTION_DEFINITIONS } from "./foes";
 import { FACTION_PROGRESSION, getFactionForWave } from "./factions";
 import { GAMEPLAY_CONFIG, GRID_CONFIG } from "./game";
 import { SPELL_SCROLL_CONFIG } from "./spellScrolls";
@@ -25,6 +25,7 @@ export {
   DEFENSE_CONFIG,
   FACTION_PROGRESSION,
   FOE_CONFIG,
+  FOE_FACTION_DEFINITIONS,
   GAME_CONFIG,
   GRID_CONFIG,
   GAMEPLAY_CONFIG,

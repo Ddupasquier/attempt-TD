@@ -11,6 +11,7 @@ const DEFENSE_IDS = {
   warlock: "warlock",
   fighter: "fighter",
   paladin: "paladin",
+  militia: "militia",
   siegeEngine: "siege-engine",
 } as const;
 

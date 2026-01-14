@@ -9,6 +9,7 @@ type UiState = {
   autoWaveEnabled: boolean;
   showDamagePopups: boolean;
   spellScrollCooldowns: Record<string, number>;
+  defenseCounts: Record<string, number>;
   speedMultiplier: number;
   isCountingDown: boolean;
   countdownRemaining: number;
@@ -22,6 +23,7 @@ type DefenseUpgradePopup = {
   id: string;
   typeId: string;
   name: string;
+  types: string[];
   level: number;
   maxLevel: number;
   targetCol?: number;

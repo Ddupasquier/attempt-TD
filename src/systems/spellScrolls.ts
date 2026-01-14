@@ -1,4 +1,4 @@
-import type { GameState, SpellScroll } from "../types/core/types";
+import type { GameState, SpellScroll, SpellScrollSound } from "../types/core/types";
 import { applyDamageModifiers } from "../core/combat";
 import { tileCenter } from "../core/geometry";
 import { GAME_CONFIG } from "../core/config";
@@ -32,8 +32,9 @@ const updateSpellScrolls = (
   cols: number,
   rows: number,
   onStateChange: () => void,
-  playSpellScrollSound: (scrollId: string) => void,
+  playSpellScrollSound: (soundEffect: SpellScrollSound | undefined) => void,
 ) => {
+  void dt;
   const scrollByKey = new Map<string, SpellScroll>();
   let didChange = false;
 
@@ -71,7 +72,7 @@ const updateSpellScrolls = (
     const scroll = scrollByKey.get(key);
     if (!scroll) continue;
 
-    playSpellScrollSound(scroll.type.id);
+    playSpellScrollSound(scroll.type.soundEffect);
     if (scroll.type.killsAll) {
       for (const target of state.foes) {
         target.hp = 0;

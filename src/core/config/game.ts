@@ -1,1 +1,2 @@
-export { GAMEPLAY_CONFIG, GRID_CONFIG } from "./master";
+export { GAMEPLAY_CONFIG } from "./gameplay";
+export { GRID_CONFIG } from "./grid";

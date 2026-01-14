@@ -415,7 +415,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
       if (!sprite) {
         const textureKey = `${foe.faction}:${foe.type}`;
         const texture =
-          foeTextures.get(textureKey) ?? foeTextures.get(`${foe.faction}:raider`) ?? PIXI.Texture.WHITE;
+          foeTextures.get(textureKey) ?? foeTextures.get(`${foe.faction}:grunt`) ?? PIXI.Texture.WHITE;
         sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5);
         foesLayer.addChild(sprite);
@@ -483,7 +483,15 @@ const createPixiRenderer = async (options: RendererOptions) => {
 
   const updateDamagePopups = (
     size: number,
-    popups: Array<{ x: number; y: number; value: number; time: number; duration: number }>,
+    popups: Array<{
+      x: number;
+      y: number;
+      value: number;
+      time: number;
+      duration: number;
+      color?: string;
+      sizeMult?: number;
+    }>,
   ) => {
     while (damageTextPool.length < popups.length) {
       const text = new PIXI.Text({

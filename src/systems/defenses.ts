@@ -22,6 +22,9 @@ const updateDefenses = (state: GameState, dt: number, size: number) => {
     const aura = getDefenseAuraMultipliers(defense, state.defenses);
     const effectiveStats = applyAuraToStats(stats, aura);
     const range = effectiveStats.range * size;
+    const slowConfig = defense.type.onHitSlow;
+    const onHitSlow =
+      slowConfig && stats.level >= slowConfig.minLevel ? slowConfig : null;
 
     if (defense.type.id === DEFENSE_IDS.siegeEngine) {
       if (state.waves.length === 0 || state.isCountingDown) continue;
@@ -92,6 +95,8 @@ const updateDefenses = (state: GameState, dt: number, size: number) => {
       maxRange,
       knockbackDistance,
       isCrit,
+      slowMultiplier: onHitSlow?.multiplier,
+      slowDuration: onHitSlow?.duration,
     });
   }
 };

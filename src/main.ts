@@ -25,7 +25,16 @@ import {
   defenseSprites,
   defenseTypes,
 } from "./core";
-import type { GameState, DefenseType, SpellScrollType } from "./types/core/types";
+import type {
+  DamageGroup,
+  DamageGroupResistances,
+  DamageResistances,
+  DamageType,
+  FactionId,
+  DefenseType,
+  GameState,
+  SpellScrollType,
+} from "./types/core/types";
 import { createPixiRenderer } from "./render/pixiRenderer";
 import { isBossWave, spawnBossFoe, spawnFoe, updateFoes } from "./systems/foes";
 import { updateProjectiles } from "./systems/projectiles";
@@ -85,6 +94,75 @@ const LEGACY_DEFENSE_ID_MAP: Record<string, string> = {
 
 const normalizeDefenseId = (id: string | null) => (id ? LEGACY_DEFENSE_ID_MAP[id] ?? id : null);
 
+const LEGACY_FACTION_ID_MAP: Record<string, string> = {
+  humans: "arcane-cabal",
+  humanoids: "arcane-cabal",
+  orcs: "orcish-warclans",
+  goblinoids: "goblin-warrens",
+  elves: "feywild-host",
+  fey: "feywild-host",
+  undead: "necrotic-legion",
+  dwarves: "giantkin-tribes",
+  giants: "giantkin-tribes",
+  spirits: "elemental-conclave",
+  elementals: "elemental-conclave",
+  demons: "abyssal-horde",
+  fiends: "infernal-contract",
+  dragons: "draconic-brood",
+};
+
+const VALID_FACTION_IDS: FactionId[] = [
+  "necrotic-legion",
+  "vampiric-court",
+  "infernal-contract",
+  "abyssal-horde",
+  "draconic-brood",
+  "elemental-conclave",
+  "goblin-warrens",
+  "orcish-warclans",
+  "giantkin-tribes",
+  "arcane-cabal",
+  "illithid-dominion",
+  "feywild-host",
+  "verdant-circle",
+  "yuan-ti-coil",
+  "eldritch-beyond",
+  "construct-imperium",
+];
+
+const normalizeFactionId = (id: string): FactionId => {
+  const mapped = LEGACY_FACTION_ID_MAP[id] ?? id;
+  return VALID_FACTION_IDS.includes(mapped as FactionId) ? (mapped as FactionId) : "necrotic-legion";
+};
+
+const mergeResistances = (
+  base?: DamageResistances,
+  extra?: DamageResistances,
+): DamageResistances | undefined => {
+  if (!base && !extra) return undefined;
+  const merged: DamageResistances = { ...(base ?? {}) };
+  for (const [key, value] of Object.entries(extra ?? {})) {
+    const damageType = key as DamageType;
+    const prior = merged[damageType] ?? 1;
+    merged[damageType] = prior * (value ?? 1);
+  }
+  return merged;
+};
+
+const mergeGroupResistances = (
+  base?: DamageGroupResistances,
+  extra?: DamageGroupResistances,
+): DamageGroupResistances | undefined => {
+  if (!base && !extra) return undefined;
+  const merged: DamageGroupResistances = { ...(base ?? {}) };
+  for (const [key, value] of Object.entries(extra ?? {})) {
+    const group = key as DamageGroup;
+    const prior = merged[group] ?? 1;
+    merged[group] = prior * (value ?? 1);
+  }
+  return merged;
+};
+
 const markStateDirty = () => {
   if (!isLoading) {
     isStateDirty = true;
@@ -95,6 +173,19 @@ const canAfford = (cost: number) => {
   const devConfig = getDevConfig();
   if (isDevEnabled() && devConfig.infiniteGold) return true;
   return gameState.gold >= cost;
+};
+
+const getDefenseCountByType = () =>
+  gameState.defenses.reduce<Record<string, number>>((counts, defense) => {
+    counts[defense.type.id] = (counts[defense.type.id] ?? 0) + 1;
+    return counts;
+  }, {});
+
+const getDefensePlacementCost = (defenseId: string) => {
+  const defense = defenseTypes.find((item) => item.id === defenseId);
+  if (!defense) return Number.POSITIVE_INFINITY;
+  const placedCount = gameState.defenses.filter((item) => item.type.id === defenseId).length;
+  return defense.cost + placedCount * 5;
 };
 
 const resizeCanvas = () => {
@@ -245,6 +336,7 @@ const resetPerWaveSpellScrollCooldowns = () => {
     autoWaveEnabled: gameState.autoWaveEnabled,
     showDamagePopups: gameState.showDamagePopups,
     spellScrollCooldowns: gameState.spellScrollCooldowns,
+    defenseCounts: getDefenseCountByType(),
     speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
     isCountingDown: gameState.isCountingDown,
     countdownRemaining: gameState.countdownRemaining,
@@ -284,6 +376,7 @@ const buildSelectedDefensePopup = () => {
     id: defense.id,
     typeId: defense.type.id,
     name: defense.type.name,
+    types: defense.type.types,
     level: defense.level,
     maxLevel: MAX_DEFENSE_LEVEL,
     targetCol: defense.targetCol,
@@ -319,11 +412,12 @@ const buildSelectedDefensePopup = () => {
       hp: gameState.hp,
       wave: gameState.wave,
       foeFactionName: getFactionForWave(gameState.wave).name,
-      soundEnabled: gameState.soundEnabled,
-      autoWaveEnabled: gameState.autoWaveEnabled,
-      showDamagePopups: gameState.showDamagePopups,
-      spellScrollCooldowns: gameState.spellScrollCooldowns,
-      speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
+    soundEnabled: gameState.soundEnabled,
+    autoWaveEnabled: gameState.autoWaveEnabled,
+    showDamagePopups: gameState.showDamagePopups,
+    spellScrollCooldowns: gameState.spellScrollCooldowns,
+    defenseCounts: getDefenseCountByType(),
+    speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
       isCountingDown: gameState.isCountingDown,
       countdownRemaining: gameState.countdownRemaining,
       showDefeat: isDefeated,
@@ -552,19 +646,29 @@ const loadSavedGame = () => {
         .filter((defense): defense is NonNullable<typeof defense> => Boolean(defense))
     : [];
   gameState.waves = Array.isArray(data.waves)
-    ? data.waves.map((wave) => ({
-        id: wave.id,
-        waveNumber: wave.waveNumber,
-        spawnTimer: wave.spawnTimer,
-        spawnIndex: wave.spawnIndex,
-        totalSpawns: wave.totalSpawns,
-        remainingEnemies: wave.remainingEnemies,
-        bossSpawned: wave.bossSpawned,
-        hpLost: wave.hpLost,
-      }))
+    ? data.waves.map((wave) => {
+        const legacyRemaining = "remainingEnemies" in wave ? (wave as { remainingEnemies?: number }).remainingEnemies : undefined;
+        return {
+          id: wave.id,
+          waveNumber: wave.waveNumber,
+          spawnTimer: wave.spawnTimer,
+          spawnIndex: wave.spawnIndex,
+          totalSpawns: wave.totalSpawns,
+          remainingFoes: wave.remainingFoes ?? legacyRemaining ?? 0,
+          bossSpawned: wave.bossSpawned,
+          hpLost: wave.hpLost,
+        };
+      })
     : [];
+  const waveNumberById = new Map(gameState.waves.map((wave) => [wave.id, wave.waveNumber]));
   gameState.foes = Array.isArray(data.foes)
     ? data.foes.map((foe) => {
+        const waveNumber = waveNumberById.get(foe.waveId);
+        const factionId = waveNumber ? getFactionForWave(waveNumber).id : normalizeFactionId(foe.faction);
+        const factionResistances = GAME_CONFIG.foe.factionResistances?.[factionId as keyof typeof GAME_CONFIG.foe.factionResistances];
+        const factionGroupResistances = GAME_CONFIG.foe.factionGroupResistances?.[
+          factionId as keyof typeof GAME_CONFIG.foe.factionGroupResistances
+        ];
         const isBoss = foe.isBoss || foe.type === "boss";
         const typeStats = isBoss ? null : GAME_CONFIG.foe.types[foe.type];
         return {
@@ -573,7 +677,7 @@ const loadSavedGame = () => {
           maxHp: foe.maxHp,
           speed: foe.speed,
           waveId: foe.waveId,
-          faction: foe.faction,
+          faction: factionId,
           type: foe.type,
           targetIndex: foe.targetIndex,
           isBoss: foe.isBoss,
@@ -588,11 +692,11 @@ const loadSavedGame = () => {
           slowMultiplier: foe.slowMultiplier,
           lastSpellScrollTile: foe.lastSpellScrollTile,
           damageResistances: isBoss
-            ? GAME_CONFIG.foe.bossDamageResistances
-            : typeStats?.damageResistances,
+            ? mergeResistances(GAME_CONFIG.foe.bossDamageResistances, factionResistances)
+            : mergeResistances(typeStats?.damageResistances, factionResistances),
           damageGroupResistances: isBoss
-            ? GAME_CONFIG.foe.bossDamageGroupResistances
-            : typeStats?.damageGroupResistances,
+            ? mergeGroupResistances(GAME_CONFIG.foe.bossDamageGroupResistances, factionGroupResistances)
+            : mergeGroupResistances(typeStats?.damageGroupResistances, factionGroupResistances),
         };
       })
     : [];
@@ -750,8 +854,8 @@ const loop = (timestamp: number) => {
     startWave();
   }
   updateFoes(gameState, scaledDt, size, markStateDirty);
-  updateSpellScrolls(gameState, scaledDt, size, grid.cols, grid.rows, markStateDirty, (spellScrollId) =>
-    audio.playSpellScrollSound(spellScrollId, gameState.soundEnabled),
+  updateSpellScrolls(gameState, scaledDt, size, grid.cols, grid.rows, markStateDirty, (soundEffect) =>
+    audio.playSpellScrollSound(soundEffect, gameState.soundEnabled),
   );
   updateDefenses(gameState, scaledDt, size);
   updateProjectiles(
@@ -836,12 +940,13 @@ const startApp = async () => {
       const { col, row } = screenToGrid(localX, localY, size);
       if (dragDefenseTypeId) {
         const defense = defenseTypes.find((item) => item.id === dragDefenseTypeId);
-        if (defense && canPlaceDefense(col, row) && canAfford(defense.cost)) {
+        const placementCost = defense ? getDefensePlacementCost(defense.id) : Number.POSITIVE_INFINITY;
+        if (defense && canPlaceDefense(col, row) && canAfford(placementCost)) {
           const rangeBonus =
             defense.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? RANGED_TREE_RANGE_BONUS : 0;
           const placedDefense = addDefense(col, row, defense, rangeBonus);
           if (!(isDevEnabled() && getDevConfig().infiniteGold)) {
-            gameState.gold -= defense.cost;
+            gameState.gold -= placementCost;
           }
           recentDefenseId = placedDefense.id;
           recentRemainingSeconds = RANGE_DISPLAY_DURATION;

@@ -29,7 +29,7 @@
 
   onMount(() => {
     const handleOutsidePointer = (event: PointerEvent) => {
-      const panel = (event.target as Node | null)?.closest(".tower-upgrade");
+      const panel = (event.target as Node | null)?.closest(".defense-upgrade");
       if (panel) return;
       onClose();
     };
@@ -46,47 +46,49 @@
   y={popup.y}
   boundsWidth={boundsWidth}
   boundsHeight={boundsHeight}
-  className="tower-upgrade"
+  className="defense-upgrade"
 >
-  <div class="tower-upgrade__header">
-    <div class="tower-upgrade__title">{UI_TEXT.upgradeTitle}</div>
-    <div class="tower-upgrade__level">{UI_TEXT.upgradeLevel(popup.level, popup.maxLevel)}</div>
+  <div class="defense-upgrade__header">
+    <div class="defense-upgrade__title">{UI_TEXT.upgradeTitle}</div>
+    <div class="defense-upgrade__level">{UI_TEXT.upgradeLevel(popup.level, popup.maxLevel)}</div>
   </div>
-  <div class="tower-upgrade__body">
-    <div class="tower-upgrade__prompt">{UI_TEXT.upgradePrompt}</div>
-    <div class="tower-upgrade__cost">
+  <div class="defense-upgrade__name">{popup.name}</div>
+  <div class="defense-upgrade__types">{popup.types.join(" • ")}</div>
+  <div class="defense-upgrade__body">
+    <div class="defense-upgrade__prompt">{UI_TEXT.upgradePrompt}</div>
+    <div class="defense-upgrade__cost">
       {popup.canUpgrade ? UI_TEXT.upgradeCost(popup.upgradeCost) : UI_TEXT.upgradeMax}
     </div>
     {#if popup.typeId === DEFENSE_IDS.siegeEngine}
-      <div class="tower-upgrade__target">
+      <div class="defense-upgrade__target">
         {UI_TEXT.siegeTargetLabel(popup.targetCol, popup.targetRow)}
       </div>
     {/if}
-    <div class="tower-upgrade__stats">
-      <div class="tower-upgrade__stat">
+    <div class="defense-upgrade__stats">
+      <div class="defense-upgrade__stat">
         <span>{UI_TEXT.statDamage}</span>
-        <span class="tower-upgrade__value">
+        <span class="defense-upgrade__value">
           {formatStat(popup.statsCurrent.damage)}
           {popup.statsNext ? ` ${UI_TEXT.statArrow} ${formatStat(popup.statsNext.damage)}` : ""}
         </span>
       </div>
-      <div class="tower-upgrade__stat">
+      <div class="defense-upgrade__stat">
         <span>{UI_TEXT.statRange}</span>
-        <span class="tower-upgrade__value">
+        <span class="defense-upgrade__value">
           {formatStat(popup.statsCurrent.range)}
           {popup.statsNext ? ` ${UI_TEXT.statArrow} ${formatStat(popup.statsNext.range)}` : ""}
         </span>
       </div>
-      <div class="tower-upgrade__stat">
+      <div class="defense-upgrade__stat">
         <span>{UI_TEXT.statRate}</span>
-        <span class="tower-upgrade__value">
+        <span class="defense-upgrade__value">
           {formatStat(popup.statsCurrent.rate)}
           {popup.statsNext ? ` ${UI_TEXT.statArrow} ${formatStat(popup.statsNext.rate)}` : ""}
         </span>
       </div>
-      <div class="tower-upgrade__stat">
+      <div class="defense-upgrade__stat">
         <span>{UI_TEXT.statKnockback}</span>
-        <span class="tower-upgrade__value">
+        <span class="defense-upgrade__value">
           {formatStat(popup.statsCurrent.knockback)}
           {popup.statsNext ? ` ${UI_TEXT.statArrow} ${formatStat(popup.statsNext.knockback)}` : ""}
         </span>
@@ -94,7 +96,7 @@
     </div>
   </div>
   <button
-    class="tower-upgrade__button"
+    class="defense-upgrade__button"
     type="button"
     disabled={!popup.canUpgrade || !popup.canAfford}
     onclick={handleUpgrade}
@@ -103,7 +105,7 @@
   </button>
   {#if popup.typeId === DEFENSE_IDS.siegeEngine}
     <button
-      class="tower-upgrade__button"
+      class="defense-upgrade__button"
       type="button"
       aria-label={UI_TEXT.siegeSetTargetAria}
       onclick={handleSetTarget}
@@ -112,11 +114,11 @@
     </button>
   {/if}
   <button
-    class="tower-upgrade__button tower-upgrade__button--danger"
+    class="defense-upgrade__button defense-upgrade__button--danger"
     type="button"
-    aria-label={UI_TEXT.removeTowerAria}
+    aria-label={UI_TEXT.removeDefenseAria}
     onclick={handleDelete}
   >
-    {UI_TEXT.removeTowerLabel}
+    {UI_TEXT.removeDefenseLabel}
   </button>
 </FloatingPanel>

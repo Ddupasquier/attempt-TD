@@ -1,4 +1,4 @@
-import type { Enemy, EnemyType, PixelSprite, Projectile, Tower, Trap } from "../core/types";
+import type { Foe, FoeType, PixelSprite, Projectile, Defense, SpellScroll } from "../core/types";
 
 type DragPreview = {
   x: number;
@@ -12,9 +12,9 @@ type FrameData = {
   size: number;
   cols: number;
   rows: number;
-  towers: Tower[];
-  traps: Trap[];
-  enemies: Enemy[];
+  defenses: Defense[];
+  spellScrolls: SpellScroll[];
+  foes: Foe[];
   projectiles: Projectile[];
   effects: {
     x: number;
@@ -32,10 +32,10 @@ type FrameData = {
     time: number;
     duration: number;
   }[];
-  highlightedTowerId: string | null;
+  highlightedDefenseId: string | null;
   highlightAlpha: number;
   dragPreview?: DragPreview;
-  trapPreview?: {
+  spellScrollPreview?: {
     x: number;
     y: number;
     radius?: number;
@@ -51,9 +51,9 @@ type FrameData = {
 type RendererOptions = {
   canvas: HTMLCanvasElement;
   pathTiles: Set<string>;
-  towerSprites: Record<string, PixelSprite>;
-  trapSprites: Record<string, PixelSprite>;
-  enemySprites: Record<string, Record<EnemyType, PixelSprite>>;
+  defenseSprites: Record<string, PixelSprite>;
+  spellScrollSprites: Record<string, PixelSprite>;
+  foeSprites: Record<string, Record<FoeType, PixelSprite>>;
 };
 
 export type { DragPreview, FrameData, RendererOptions };

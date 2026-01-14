@@ -1,9 +1,10 @@
 import * as PIXI from "pixi.js";
 import { getTerrainFeatureAtTile } from "../core/terrain";
 import { tileCenter } from "../core/geometry";
-import { getTowerStats, MAX_TOWER_LEVEL } from "../core/towerLevels";
-import type { Enemy, Projectile, Tower } from "../types/core/types";
-import { TOWER_IDS } from "../constants/towerIds";
+import { getDefenseStats, MAX_DEFENSE_LEVEL } from "../core/defenseLevels";
+import { applyAuraToStats, getDefenseAuraMultipliers } from "../core/defenseAuras";
+import type { Foe, PixelSprite, Projectile, Defense } from "../types/core/types";
+import { DEFENSE_IDS } from "../constants/defenseIds";
 import type { FrameData, RendererOptions } from "../types/render/pixiRendererTypes";
 
 const hash = (col: number, row: number, salt: number) => {
@@ -125,11 +126,11 @@ const buildTerrainGraphics = (
       for (let py = 0; py < micro; py += 1) {
         for (let px = 0; px < micro; px += 1) {
           const grassRoll = hash(col * micro + px, row * micro + py, 1) % 100;
-          let color = 0x78b935;
-          if (grassRoll < 10) color = 0x6cab2f;
-          else if (grassRoll < 20) color = 0x87c33f;
-          else if (grassRoll < 30) color = 0x9ad54c;
-          else if (grassRoll < 38) color = 0x5fa62a;
+          let color = 0x5e6b3a;
+          if (grassRoll < 10) color = 0x556537;
+          else if (grassRoll < 20) color = 0x6a7640;
+          else if (grassRoll < 30) color = 0x738247;
+          else if (grassRoll < 38) color = 0x4c5a32;
           fillRect(graphics, color, tileX + px * pixel, tileY + py * pixel, pixel, pixel);
         }
       }
@@ -137,24 +138,24 @@ const buildTerrainGraphics = (
       const feature = getTerrainFeatureAtTile(col, row, pathTiles);
       if (feature.type === "tree") {
         if (feature.variant === 0) {
-          fillRect(graphics, 0x3a5c2b, tileX + pixel * 4, tileY + pixel * 7, pixel * 3, pixel * 3);
-          fillRect(graphics, 0x4f7b36, tileX + pixel * 2, tileY + pixel * 3, pixel * 7, pixel * 5);
-          fillRect(graphics, 0x6fa746, tileX + pixel * 3, tileY + pixel * 2, pixel * 5, pixel * 2);
+          fillRect(graphics, 0x324a28, tileX + pixel * 4, tileY + pixel * 7, pixel * 3, pixel * 3);
+          fillRect(graphics, 0x3f5f32, tileX + pixel * 2, tileY + pixel * 3, pixel * 7, pixel * 5);
+          fillRect(graphics, 0x4f6f3a, tileX + pixel * 3, tileY + pixel * 2, pixel * 5, pixel * 2);
           fillRect(graphics, 0x3b2b1b, tileX + pixel * 5, tileY + pixel * 9, pixel * 2, pixel * 3);
         } else if (feature.variant === 1) {
-          fillRect(graphics, 0x2f5a30, tileX + pixel * 5, tileY + pixel * 7, pixel * 2, pixel * 3);
-          fillRect(graphics, 0x3f7b3f, tileX + pixel * 3, tileY + pixel * 3, pixel * 6, pixel * 5);
-          fillRect(graphics, 0x5fa649, tileX + pixel * 4, tileY + pixel * 1, pixel * 4, pixel * 2);
+          fillRect(graphics, 0x2e4f2b, tileX + pixel * 5, tileY + pixel * 7, pixel * 2, pixel * 3);
+          fillRect(graphics, 0x3b5d35, tileX + pixel * 3, tileY + pixel * 3, pixel * 6, pixel * 5);
+          fillRect(graphics, 0x4f6f3a, tileX + pixel * 4, tileY + pixel * 1, pixel * 4, pixel * 2);
           fillRect(graphics, 0x3b2b1b, tileX + pixel * 5, tileY + pixel * 9, pixel * 2, pixel * 2);
         } else if (feature.variant === 2) {
-          fillRect(graphics, 0x365b2a, tileX + pixel * 4, tileY + pixel * 6, pixel * 4, pixel * 4);
-          fillRect(graphics, 0x4f7b36, tileX + pixel * 2, tileY + pixel * 3, pixel * 8, pixel * 4);
-          fillRect(graphics, 0x6fa746, tileX + pixel * 3, tileY + pixel * 2, pixel * 6, pixel * 2);
+          fillRect(graphics, 0x2f4f2c, tileX + pixel * 4, tileY + pixel * 6, pixel * 4, pixel * 4);
+          fillRect(graphics, 0x3f5f32, tileX + pixel * 2, tileY + pixel * 3, pixel * 8, pixel * 4);
+          fillRect(graphics, 0x4f6f3a, tileX + pixel * 3, tileY + pixel * 2, pixel * 6, pixel * 2);
           fillRect(graphics, 0x3b2b1b, tileX + pixel * 5, tileY + pixel * 9, pixel * 2, pixel * 3);
         } else {
-          fillRect(graphics, 0x2e532b, tileX + pixel * 5, tileY + pixel * 6, pixel * 2, pixel * 4);
-          fillRect(graphics, 0x4a7536, tileX + pixel * 2, tileY + pixel * 4, pixel * 8, pixel * 4);
-          fillRect(graphics, 0x6fa746, tileX + pixel * 3, tileY + pixel * 2, pixel * 6, pixel * 2);
+          fillRect(graphics, 0x2c4829, tileX + pixel * 5, tileY + pixel * 6, pixel * 2, pixel * 4);
+          fillRect(graphics, 0x3f5a32, tileX + pixel * 2, tileY + pixel * 4, pixel * 8, pixel * 4);
+          fillRect(graphics, 0x4f6f3a, tileX + pixel * 3, tileY + pixel * 2, pixel * 6, pixel * 2);
           fillRect(graphics, 0x3b2b1b, tileX + pixel * 5, tileY + pixel * 9, pixel * 2, pixel * 2);
         }
       } else if (feature.type === "stump") {
@@ -179,9 +180,9 @@ const buildTerrainGraphics = (
           fillRect(graphics, 0xb1aca2, tileX + pixel * 7, tileY + pixel * 6, pixel, pixel);
         }
       } else if (feature.type === "flower") {
-        fillRect(graphics, 0xf0d86d, tileX + pixel * 2, tileY + pixel * 4, pixel, pixel);
-        fillRect(graphics, 0xf0d86d, tileX + pixel * 8, tileY + pixel * 5, pixel, pixel);
-        fillRect(graphics, 0xff8b7a, tileX + pixel * 5, tileY + pixel * 9, pixel, pixel);
+        fillRect(graphics, 0xb84b3b, tileX + pixel * 2, tileY + pixel * 4, pixel, pixel);
+        fillRect(graphics, 0xb84b3b, tileX + pixel * 8, tileY + pixel * 5, pixel, pixel);
+        fillRect(graphics, 0xd9c27a, tileX + pixel * 5, tileY + pixel * 9, pixel, pixel);
       }
 
       if (pathTiles.has(tileKey)) {
@@ -211,21 +212,21 @@ const buildTerrainGraphics = (
             }
 
             const dirtRoll = hash(col * micro + px, row * micro + py, 5) % 100;
-            let dirtColor = 0xc9a26b;
-            if (dirtRoll < 10) dirtColor = 0xcaa870;
-            else if (dirtRoll < 20) dirtColor = 0xdfc18c;
-            else if (dirtRoll < 30) dirtColor = 0xb88c58;
+            let dirtColor = 0x8f8779;
+            if (dirtRoll < 10) dirtColor = 0x9b9284;
+            else if (dirtRoll < 20) dirtColor = 0xa69d8e;
+            else if (dirtRoll < 30) dirtColor = 0x7c7367;
             fillRect(graphics, dirtColor, tileX + px * pixel, tileY + py * pixel, pixel, pixel);
           }
         }
 
         const pebbleRoll = hash(col, row, 6) % 100;
         if (pebbleRoll < 60) {
-          fillRect(graphics, 0xe0d1b3, tileX + pixel * 2, tileY + pixel * 3, pixel, pixel);
-          fillRect(graphics, 0xe0d1b3, tileX + pixel * 8, tileY + pixel * 6, pixel, pixel);
+          fillRect(graphics, 0xc6bdb2, tileX + pixel * 2, tileY + pixel * 3, pixel, pixel);
+          fillRect(graphics, 0xc6bdb2, tileX + pixel * 8, tileY + pixel * 6, pixel, pixel);
         }
         if (pebbleRoll < 30) {
-          fillRect(graphics, 0x9a876c, tileX + pixel * 6, tileY + pixel * 2, pixel, pixel);
+          fillRect(graphics, 0x7b7267, tileX + pixel * 6, tileY + pixel * 2, pixel, pixel);
         }
       }
     }
@@ -243,10 +244,10 @@ const createPixiRenderer = async (options: RendererOptions) => {
   });
 
   const terrainLayer = new PIXI.Graphics();
-  const towersLayer = new PIXI.Container();
+  const defensesLayer = new PIXI.Container();
   const starsLayer = new PIXI.Container();
-  const trapsLayer = new PIXI.Container();
-  const enemiesLayer = new PIXI.Container();
+  const spellScrollsLayer = new PIXI.Container();
+  const foesLayer = new PIXI.Container();
   const healthBarsLayer = new PIXI.Container();
   const projectilesLayer = new PIXI.Container();
   const damageLayer = new PIXI.Container();
@@ -254,36 +255,36 @@ const createPixiRenderer = async (options: RendererOptions) => {
 
   app.stage.addChild(
     terrainLayer,
-    towersLayer,
+    defensesLayer,
     starsLayer,
-    trapsLayer,
-    enemiesLayer,
+    spellScrollsLayer,
+    foesLayer,
     healthBarsLayer,
     projectilesLayer,
     damageLayer,
     overlayLayer,
   );
 
-  const towerTextures = new Map<string, PIXI.Texture>();
-  const trapTextures = new Map<string, PIXI.Texture>();
-  const enemyTextures = new Map<string, PIXI.Texture>();
-  Object.entries(options.towerSprites).forEach(([key, sprite]) => {
-    towerTextures.set(key, createSpriteTexture(sprite));
+  const defenseTextures = new Map<string, PIXI.Texture>();
+  const spellScrollTextures = new Map<string, PIXI.Texture>();
+  const foeTextures = new Map<string, PIXI.Texture>();
+  Object.entries(options.defenseSprites).forEach(([key, sprite]) => {
+    defenseTextures.set(key, createSpriteTexture(sprite));
   });
-  Object.entries(options.trapSprites).forEach(([key, sprite]) => {
-    trapTextures.set(key, createSpriteTexture(sprite));
+  Object.entries(options.spellScrollSprites).forEach(([key, sprite]) => {
+    spellScrollTextures.set(key, createSpriteTexture(sprite));
   });
-  Object.entries(options.enemySprites).forEach(([factionId, sprites]) => {
+  Object.entries(options.foeSprites).forEach(([factionId, sprites]) => {
     Object.entries(sprites).forEach(([type, sprite]) => {
-      enemyTextures.set(`${factionId}:${type}`, createSpriteTexture(sprite));
+      foeTextures.set(`${factionId}:${type}`, createSpriteTexture(sprite));
     });
   });
   const rockTexture = createRockTexture();
 
-  const towerSpritesById = new Map<string, PIXI.Sprite>();
-  const trapSpritesById = new Map<string, PIXI.Sprite>();
+  const defenseSpritesById = new Map<string, PIXI.Sprite>();
+  const spellScrollSpritesById = new Map<string, PIXI.Sprite>();
   const starGraphicsById = new Map<string, PIXI.Graphics>();
-  const enemySpritesById = new Map<string, PIXI.Sprite>();
+  const foeSpritesById = new Map<string, PIXI.Sprite>();
   const healthBarsById = new Map<string, PIXI.Graphics>();
   const projectilePool: PIXI.Sprite[] = [];
   const damageTextPool: PIXI.Text[] = [];
@@ -310,12 +311,12 @@ const createPixiRenderer = async (options: RendererOptions) => {
     graphics.poly(points).fill(color);
   };
 
-  const updateTowers = (size: number, towers: Tower[]) => {
-    const activeIds = new Set(towers.map((tower) => tower.id));
-    for (const [id, sprite] of towerSpritesById.entries()) {
+  const updateDefenses = (size: number, defenses: Defense[]) => {
+    const activeIds = new Set(defenses.map((defense) => defense.id));
+    for (const [id, sprite] of defenseSpritesById.entries()) {
       if (!activeIds.has(id)) {
-        towersLayer.removeChild(sprite);
-        towerSpritesById.delete(id);
+        defensesLayer.removeChild(sprite);
+        defenseSpritesById.delete(id);
       }
     }
     for (const [id, starGraphic] of starGraphicsById.entries()) {
@@ -324,32 +325,32 @@ const createPixiRenderer = async (options: RendererOptions) => {
         starGraphicsById.delete(id);
       }
     }
-    for (const tower of towers) {
-      let sprite = towerSpritesById.get(tower.id);
+    for (const defense of defenses) {
+      let sprite = defenseSpritesById.get(defense.id);
       if (!sprite) {
-        const texture = towerTextures.get(tower.type.id) ?? PIXI.Texture.WHITE;
+        const texture = defenseTextures.get(defense.type.id) ?? PIXI.Texture.WHITE;
         sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5);
-        towersLayer.addChild(sprite);
-        towerSpritesById.set(tower.id, sprite);
+        defensesLayer.addChild(sprite);
+        defenseSpritesById.set(defense.id, sprite);
       }
-      const center = tileCenter(tower.col, tower.row, size);
+      const center = tileCenter(defense.col, defense.row, size);
       const textureWidth = sprite.texture.width || 1;
       const scale = (size * 0.56) / textureWidth;
       sprite.scale.set(scale);
       sprite.position.set(center.x, center.y);
 
-      const level = Math.min(tower.level, MAX_TOWER_LEVEL);
+      const level = Math.min(defense.level, MAX_DEFENSE_LEVEL);
       if (level > 0) {
-        let starGraphic = starGraphicsById.get(tower.id);
+        let starGraphic = starGraphicsById.get(defense.id);
         if (!starGraphic) {
           starGraphic = new PIXI.Graphics();
           starsLayer.addChild(starGraphic);
-          starGraphicsById.set(tower.id, starGraphic);
+          starGraphicsById.set(defense.id, starGraphic);
         }
         starGraphic.clear();
         const baseY = center.y - size * 0.48;
-        if (level === MAX_TOWER_LEVEL) {
+        if (level === MAX_DEFENSE_LEVEL) {
           drawStar(starGraphic, center.x, baseY, size * 0.16, 0xe66ca7);
         } else {
           const starColor = 0xf2c14f;
@@ -360,7 +361,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
           }
         }
       } else {
-        const starGraphic = starGraphicsById.get(tower.id);
+        const starGraphic = starGraphicsById.get(defense.id);
         if (starGraphic) {
           starGraphic.clear();
         }
@@ -368,25 +369,25 @@ const createPixiRenderer = async (options: RendererOptions) => {
     }
   };
 
-  const updateTraps = (size: number, traps: Array<{ id: string; col: number; row: number; type: { id: string } }>) => {
-    const activeIds = new Set(traps.map((trap) => trap.id));
-    for (const [id, sprite] of trapSpritesById.entries()) {
+  const updateSpellScrolls = (size: number, spellScrolls: Array<{ id: string; col: number; row: number; type: { id: string } }>) => {
+    const activeIds = new Set(spellScrolls.map((spellScroll) => spellScroll.id));
+    for (const [id, sprite] of spellScrollSpritesById.entries()) {
       if (!activeIds.has(id)) {
-        trapsLayer.removeChild(sprite);
-        trapSpritesById.delete(id);
+        spellScrollsLayer.removeChild(sprite);
+        spellScrollSpritesById.delete(id);
       }
     }
 
-    for (const trap of traps) {
-      let sprite = trapSpritesById.get(trap.id);
+    for (const spellScroll of spellScrolls) {
+      let sprite = spellScrollSpritesById.get(spellScroll.id);
       if (!sprite) {
-        const texture = trapTextures.get(trap.type.id) ?? PIXI.Texture.WHITE;
+        const texture = spellScrollTextures.get(spellScroll.type.id) ?? PIXI.Texture.WHITE;
         sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5);
-        trapsLayer.addChild(sprite);
-        trapSpritesById.set(trap.id, sprite);
+        spellScrollsLayer.addChild(sprite);
+        spellScrollSpritesById.set(spellScroll.id, sprite);
       }
-      const center = tileCenter(trap.col, trap.row, size);
+      const center = tileCenter(spellScroll.col, spellScroll.row, size);
       const textureWidth = sprite.texture.width || 1;
       const scale = (size * 0.4) / textureWidth;
       sprite.scale.set(scale);
@@ -394,12 +395,12 @@ const createPixiRenderer = async (options: RendererOptions) => {
     }
   };
 
-  const updateEnemies = (size: number, enemies: Enemy[]) => {
-    const activeIds = new Set(enemies.map((enemy) => enemy.id));
-    for (const [id, sprite] of enemySpritesById.entries()) {
+  const updateEnemies = (size: number, foes: Foe[]) => {
+    const activeIds = new Set(foes.map((foe) => foe.id));
+    for (const [id, sprite] of foeSpritesById.entries()) {
       if (!activeIds.has(id)) {
-        enemiesLayer.removeChild(sprite);
-        enemySpritesById.delete(id);
+        foesLayer.removeChild(sprite);
+        foeSpritesById.delete(id);
       }
     }
     for (const [id, bar] of healthBarsById.entries()) {
@@ -408,36 +409,36 @@ const createPixiRenderer = async (options: RendererOptions) => {
         healthBarsById.delete(id);
       }
     }
-    for (const enemy of enemies) {
-      if (enemy.x === undefined || enemy.y === undefined) continue;
-      let sprite = enemySpritesById.get(enemy.id);
+    for (const foe of foes) {
+      if (foe.x === undefined || foe.y === undefined) continue;
+      let sprite = foeSpritesById.get(foe.id);
       if (!sprite) {
-        const textureKey = `${enemy.faction}:${enemy.type}`;
+        const textureKey = `${foe.faction}:${foe.type}`;
         const texture =
-          enemyTextures.get(textureKey) ?? enemyTextures.get(`${enemy.faction}:raider`) ?? PIXI.Texture.WHITE;
+          foeTextures.get(textureKey) ?? foeTextures.get(`${foe.faction}:raider`) ?? PIXI.Texture.WHITE;
         sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5);
-        enemiesLayer.addChild(sprite);
-        enemySpritesById.set(enemy.id, sprite);
+        foesLayer.addChild(sprite);
+        foeSpritesById.set(foe.id, sprite);
       }
       const textureWidth = sprite.texture.width || 1;
-      const sizeScale = enemy.sizeScale ?? 1;
+      const sizeScale = foe.sizeScale ?? 1;
       const scale = (size * 0.5 * sizeScale) / textureWidth;
       sprite.scale.set(scale);
-      sprite.position.set(enemy.x, enemy.y);
+      sprite.position.set(foe.x, foe.y);
 
-      let bar = healthBarsById.get(enemy.id);
+      let bar = healthBarsById.get(foe.id);
       if (!bar) {
         bar = new PIXI.Graphics();
         healthBarsLayer.addChild(bar);
-        healthBarsById.set(enemy.id, bar);
+        healthBarsById.set(foe.id, bar);
       }
-      const maxHp = enemy.maxHp || 1;
-      const hpRatio = Math.max(0, Math.min(1, enemy.hp / maxHp));
+      const maxHp = foe.maxHp || 1;
+      const hpRatio = Math.max(0, Math.min(1, foe.hp / maxHp));
       const barWidth = size * 0.6 * sizeScale;
       const barHeight = Math.max(2, size * 0.08);
-      const barX = enemy.x - barWidth / 2;
-      const barY = enemy.y - size * 0.55 * sizeScale;
+      const barX = foe.x - barWidth / 2;
+      const barY = foe.y - size * 0.55 * sizeScale;
       bar.clear();
       bar.rect(barX, barY, barWidth, barHeight).fill(0x2a1b18);
       if (hpRatio > 0) {
@@ -456,11 +457,11 @@ const createPixiRenderer = async (options: RendererOptions) => {
     projectiles.forEach((bolt, index) => {
       const sprite = projectilePool[index];
       sprite.visible = true;
-      const isCatapult = bolt.towerTypeId === TOWER_IDS.catapult;
-      sprite.texture = isCatapult ? rockTexture : PIXI.Texture.WHITE;
-      sprite.tint = isCatapult ? 0xffffff : hexToNumber(bolt.color);
+      const isSiege = bolt.defenseTypeId === DEFENSE_IDS.siegeEngine;
+      sprite.texture = isSiege ? rockTexture : PIXI.Texture.WHITE;
+      sprite.tint = isSiege ? 0xffffff : hexToNumber(bolt.color);
       let sizePx = 3;
-      if (isCatapult) {
+      if (isSiege) {
         const targetX = bolt.targetX ?? bolt.x;
         const targetY = bolt.targetY ?? bolt.y;
         const totalDist = Math.hypot(targetX - bolt.originX, targetY - bolt.originY);
@@ -547,12 +548,13 @@ const createPixiRenderer = async (options: RendererOptions) => {
         .circle(frame.targetIndicator.x, frame.targetIndicator.y, frame.size * 0.18)
         .stroke({ width: Math.max(1, frame.size * 0.03), color: 0xff3b30, alpha: alpha * 0.8 });
     }
-    if (frame.highlightedTowerId && frame.highlightAlpha > 0) {
-      const tower = frame.towers.find((item) => item.id === frame.highlightedTowerId);
-      if (tower) {
-        const center = tileCenter(tower.col, tower.row, frame.size);
+    if (frame.highlightedDefenseId && frame.highlightAlpha > 0) {
+      const defense = frame.defenses.find((item) => item.id === frame.highlightedDefenseId);
+      if (defense) {
+        const center = tileCenter(defense.col, defense.row, frame.size);
         const strokeWidth = Math.max(1.5, frame.size * 0.04);
-        const stats = getTowerStats(tower);
+        const aura = getDefenseAuraMultipliers(defense, frame.defenses);
+        const stats = applyAuraToStats(getDefenseStats(defense), aura);
         overlayGraphics
           .circle(center.x, center.y, stats.range * frame.size)
           .stroke({ width: strokeWidth, color: 0xffffff, alpha: 0.45 * frame.highlightAlpha });
@@ -564,7 +566,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
         .circle(frame.dragPreview.x, frame.dragPreview.y, frame.dragPreview.range * frame.size)
         .stroke({ width: strokeWidth, color: 0xffffff, alpha: 0.55 });
       const texture = frame.dragPreview.spriteId
-        ? towerTextures.get(frame.dragPreview.spriteId) ?? PIXI.Texture.WHITE
+        ? defenseTextures.get(frame.dragPreview.spriteId) ?? PIXI.Texture.WHITE
         : PIXI.Texture.WHITE;
       const scale = frame.dragPreview.spriteId
         ? (frame.size * 0.56) / (texture.width || 1)
@@ -575,29 +577,29 @@ const createPixiRenderer = async (options: RendererOptions) => {
       overlayDragSprite.position.set(frame.dragPreview.x, frame.dragPreview.y);
       overlayDragSprite.visible = true;
     }
-    if (frame.trapPreview) {
+    if (frame.spellScrollPreview) {
       const strokeWidth = Math.max(1.2, frame.size * 0.03);
-      if (frame.trapPreview.radius) {
+      if (frame.spellScrollPreview.radius) {
         overlayGraphics
-          .circle(frame.trapPreview.x, frame.trapPreview.y, frame.trapPreview.radius * frame.size)
+          .circle(frame.spellScrollPreview.x, frame.spellScrollPreview.y, frame.spellScrollPreview.radius * frame.size)
           .stroke({ width: strokeWidth, color: 0xffffff, alpha: 0.35 });
       }
-      const texture = frame.trapPreview.spriteId
-        ? trapTextures.get(frame.trapPreview.spriteId) ?? PIXI.Texture.WHITE
+      const texture = frame.spellScrollPreview.spriteId
+        ? spellScrollTextures.get(frame.spellScrollPreview.spriteId) ?? PIXI.Texture.WHITE
         : PIXI.Texture.WHITE;
       const scale = (frame.size * 0.4) / (texture.width || 1);
       overlayDragSprite.texture = texture;
       overlayDragSprite.scale.set(scale);
       overlayDragSprite.tint = 0xffffff;
-      overlayDragSprite.position.set(frame.trapPreview.x, frame.trapPreview.y);
+      overlayDragSprite.position.set(frame.spellScrollPreview.x, frame.spellScrollPreview.y);
       overlayDragSprite.visible = true;
     }
   };
 
   const updateFrame = (frame: FrameData) => {
-    updateTowers(frame.size, frame.towers);
-    updateTraps(frame.size, frame.traps);
-    updateEnemies(frame.size, frame.enemies);
+    updateDefenses(frame.size, frame.defenses);
+    updateSpellScrolls(frame.size, frame.spellScrolls);
+    updateEnemies(frame.size, frame.foes);
     updateProjectiles(frame.size, frame.projectiles);
     updateDamagePopups(frame.size, frame.damagePopups);
     updateOverlay(frame);

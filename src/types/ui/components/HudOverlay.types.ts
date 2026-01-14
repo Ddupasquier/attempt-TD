@@ -1,21 +1,21 @@
-import type { PixelSprite, TowerType, TrapType } from "../../core/types";
+import type { PixelSprite, DefenseType, SpellScrollType } from "../../core/types";
 
 type HudOverlayProps = {
-  towerTypes: TowerType[];
-  towerSprites: Record<string, PixelSprite>;
-  trapTypes: TrapType[];
-  trapSprites: Record<string, PixelSprite>;
-  trapCooldowns: Record<string, number>;
-  selectedTowerTypeId: string | null;
+  defenseTypes: DefenseType[];
+  defenseSprites: Record<string, PixelSprite>;
+  spellScrollTypes: SpellScrollType[];
+  spellScrollSprites: Record<string, PixelSprite>;
+  spellScrollCooldowns: Record<string, number>;
+  selectedDefenseTypeId: string | null;
   gold: number;
-  lives: number;
+  hp: number;
   wave: number;
-  enemyFactionName: string;
+  foeFactionName: string;
   isCollapsed: boolean;
   onToggle: () => void;
-  onSelectTower: (towerId: string | null) => void;
-  onStartDragTower: (towerId: string) => void;
-  onStartDragTrap: (trapId: string) => void;
+  onSelectDefense: (defenseId: string | null) => void;
+  onStartDragDefense: (defenseId: string) => void;
+  onStartDragSpellScroll: (spellScrollId: string) => void;
 };
 
 export type { HudOverlayProps };

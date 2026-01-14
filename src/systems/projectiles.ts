@@ -1,14 +1,14 @@
 import type { GameState } from "../types/core/types";
 import { GAME_CONFIG } from "../core/config";
 import { getDevConfig, isDevEnabled } from "../core/devFlags";
-import { TOWER_IDS } from "../constants/towerIds";
-import { getCatapultDamagePopupStyle } from "../core/devFlags";
+import { DEFENSE_IDS } from "../constants/defenseIds";
+import { getSiegeDamagePopupStyle } from "../core/devFlags";
 import { applyDamageModifiers } from "../core/combat";
 
 const updateProjectiles = (
   state: GameState,
   dt: number,
-  playDamageSound: (towerTypeId: string) => void,
+  playDamageSound: (defenseTypeId: string) => void,
   showDamagePopups: boolean,
 ) => {
   const devConfig = getDevConfig();
@@ -62,7 +62,7 @@ const updateProjectiles = (
     const step = bolt.speed * dt;
     if (dist <= step) {
       if (bolt.target) {
-        if (isGodMode && godMode.oneShotEnemies) {
+        if (isGodMode && godMode.oneShotFoes) {
           const damage = bolt.target.hp;
           bolt.target.hp = 0;
           if (bolt.target.x !== undefined && bolt.target.y !== undefined) {
@@ -72,8 +72,8 @@ const updateProjectiles = (
                   duration: 1.1,
                   sizeMult: 1.4,
                 }
-              : bolt.towerTypeId === TOWER_IDS.catapult
-                ? getCatapultDamagePopupStyle()
+              : bolt.defenseTypeId === DEFENSE_IDS.siegeEngine
+                ? getSiegeDamagePopupStyle()
                 : undefined;
             pushDamagePopup(
               bolt.target.x,
@@ -99,8 +99,8 @@ const updateProjectiles = (
                   duration: 1.1,
                   sizeMult: 1.4,
                 }
-              : bolt.towerTypeId === TOWER_IDS.catapult
-                ? getCatapultDamagePopupStyle()
+              : bolt.defenseTypeId === DEFENSE_IDS.siegeEngine
+                ? getSiegeDamagePopupStyle()
                 : undefined;
             pushDamagePopup(
               bolt.target.x,
@@ -113,23 +113,23 @@ const updateProjectiles = (
           }
         }
       } else if (bolt.splashRadius) {
-        for (const enemy of state.enemies) {
-          if (enemy.x === undefined || enemy.y === undefined) continue;
-          const sx = enemy.x - targetX;
-          const sy = enemy.y - targetY;
+        for (const foe of state.foes) {
+          if (foe.x === undefined || foe.y === undefined) continue;
+          const sx = foe.x - targetX;
+          const sy = foe.y - targetY;
           const sdist = Math.hypot(sx, sy);
           if (sdist > bolt.splashRadius) continue;
           const falloff = Math.max(0, 1 - sdist / bolt.splashRadius);
           const damage = applyDamageModifiers(
             bolt.damage * falloff,
             bolt.damageType,
-            enemy.damageResistances,
-            enemy.damageGroupResistances,
+            foe.damageResistances,
+            foe.damageGroupResistances,
           );
-          if (isGodMode && godMode.oneShotEnemies) {
-            enemy.hp = 0;
+          if (isGodMode && godMode.oneShotFoes) {
+            foe.hp = 0;
           } else {
-            enemy.hp -= damage;
+            foe.hp -= damage;
           }
           const style = bolt.isCrit
             ? {
@@ -137,12 +137,12 @@ const updateProjectiles = (
                 duration: 1.1,
                 sizeMult: 1.4,
               }
-            : bolt.towerTypeId === TOWER_IDS.catapult
-              ? getCatapultDamagePopupStyle()
+            : bolt.defenseTypeId === DEFENSE_IDS.siegeEngine
+              ? getSiegeDamagePopupStyle()
               : undefined;
           pushDamagePopup(
-            enemy.x,
-            enemy.y,
+            foe.x,
+            foe.y,
             Math.round(damage),
             style?.color,
             style?.duration ?? 0.6,
@@ -159,7 +159,7 @@ const updateProjectiles = (
       }
       if (bolt.target && bolt.knockbackDistance > 0) {
         if ((bolt.target.knockbackResistRemaining ?? 0) > 0) {
-          playDamageSound(bolt.towerTypeId);
+          playDamageSound(bolt.defenseTypeId);
           state.projectiles.splice(i, 1);
           continue;
         }
@@ -184,8 +184,8 @@ const updateProjectiles = (
         if (directionX !== 0 || directionY !== 0) {
           const typeScale =
             bolt.target.isBoss || bolt.target.type === "boss"
-              ? GAME_CONFIG.enemy.bossKnockbackDistanceMultiplier
-              : GAME_CONFIG.enemy.types[bolt.target.type].knockbackDistanceMultiplier;
+              ? GAME_CONFIG.foe.bossKnockbackDistanceMultiplier
+              : GAME_CONFIG.foe.types[bolt.target.type].knockbackDistanceMultiplier;
           const resistance =
             bolt.target.isBoss || bolt.target.type === "elite" ? 0.5 : 1;
           const knockbackDistance = bolt.knockbackDistance * 2.6 * resistance * typeScale;
@@ -197,11 +197,11 @@ const updateProjectiles = (
           bolt.target.knockbackY = 0;
           bolt.target.knockbackResistRemaining =
             bolt.target.isBoss || bolt.target.type === "boss"
-              ? GAME_CONFIG.enemy.bossKnockbackResistSeconds
-              : GAME_CONFIG.enemy.types[bolt.target.type].knockbackResistSeconds;
+              ? GAME_CONFIG.foe.bossKnockbackResistSeconds
+              : GAME_CONFIG.foe.types[bolt.target.type].knockbackResistSeconds;
         }
       }
-      playDamageSound(bolt.towerTypeId);
+      playDamageSound(bolt.defenseTypeId);
       state.projectiles.splice(i, 1);
       continue;
     }

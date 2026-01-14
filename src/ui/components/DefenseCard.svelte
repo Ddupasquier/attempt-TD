@@ -1,15 +1,14 @@
 <script lang="ts">
   import { spriteCanvas } from "../spriteCanvas";
-  import type { TrapCardProps } from "../../types/ui/components/TrapCard.types";
+  import type { DefenseCardProps } from "../../types/ui/components/DefenseCard.types";
 
-  const { trap, sprite, isActive, cooldownRemaining = 0, onSelect, onStartDrag } =
-    $props<TrapCardProps>();
+  const { defense, sprite, isActive, canAfford, onSelect, onStartDrag } = $props<DefenseCardProps>();
 
   const dragThreshold = 6;
   let suppressClick = false;
 
   const handlePointerDown = (event: PointerEvent) => {
-    if (cooldownRemaining > 0) return;
+    if (!canAfford) return;
     event.preventDefault();
     event.stopPropagation();
     const startX = event.clientX;
@@ -20,7 +19,7 @@
       const dy = moveEvent.clientY - startY;
       if (Math.hypot(dx, dy) > dragThreshold) {
         suppressClick = true;
-        onStartDrag(trap.id);
+        onStartDrag(defense.id);
         cleanup();
       }
     };
@@ -41,37 +40,31 @@
   };
 
   const handleClick = (event: MouseEvent) => {
+    if (!canAfford) return;
     event.stopPropagation();
     if (suppressClick) {
       suppressClick = false;
       return;
     }
-    onSelect(isActive ? null : trap.id);
+    onSelect(isActive ? null : defense.id);
   };
 </script>
 
 <button
-  class="trap-card"
+  class="tower-card"
   class:active={isActive}
-  class:is-counting={cooldownRemaining > 0}
-  data-countdown={
-    cooldownRemaining && Number.isFinite(cooldownRemaining)
-      ? Math.ceil(cooldownRemaining)
-      : cooldownRemaining
-        ? "W"
-        : null
-  }
   type="button"
+  disabled={!canAfford}
   onclick={handleClick}
   onpointerdown={handlePointerDown}
 >
   <canvas class="tower-sprite" width="36" height="36" use:spriteCanvas={sprite ?? null}></canvas>
   <div class="tower-card__content">
-    <h4>{trap.name}</h4>
-    <span class="tower-card__cost">({trap.cost}g)</span>
+    <h4>{defense.name}</h4>
+    <span class="tower-card__cost">({defense.cost}g)</span>
     <div class="tower-card__details">
-      <div class="tower-card__types">{trap.types.join(" • ")}</div>
-      <p>{trap.description}</p>
+      <div class="tower-card__types">{defense.types.join(" • ")}</div>
+      <p>{defense.description}</p>
     </div>
   </div>
 </button>

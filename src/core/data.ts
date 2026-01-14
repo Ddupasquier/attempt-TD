@@ -1,16 +1,16 @@
-import { TOWER_IDS } from "../constants/towerIds";
-import { TRAP_IDS } from "../constants/trapIds";
-import type { EnemyType, FactionId, PixelSprite } from "../types/core/types";
+import { DEFENSE_IDS } from "../constants/defenseIds";
+import { SPELL_SCROLL_IDS } from "../constants/spellScrollIds";
+import type { FoeType, FactionId, PixelSprite } from "../types/core/types";
 import { GAME_CONFIG } from "./config";
 
-const { grid, towerTypes, trapTypes } = GAME_CONFIG;
-const MIN_TOWER_RANGE = GAME_CONFIG.tower.minRange;
+const { grid, defenseTypes, spellScrollTypes } = GAME_CONFIG;
+const MIN_DEFENSE_RANGE = GAME_CONFIG.defense.minRange;
 
-const assertTowerRanges = () => {
-  const invalidTowers = towerTypes.filter((tower) => tower.range < MIN_TOWER_RANGE);
-  if (invalidTowers.length > 0) {
-    const names = invalidTowers.map((tower) => tower.name).join(", ");
-    throw new Error(`Tower range below minimum (${MIN_TOWER_RANGE}): ${names}`);
+const assertDefenseRanges = () => {
+  const invalidDefenses = defenseTypes.filter((defense) => defense.range < MIN_DEFENSE_RANGE);
+  if (invalidDefenses.length > 0) {
+    const names = invalidDefenses.map((defense) => defense.name).join(", ");
+    throw new Error(`Defense range below minimum (${MIN_DEFENSE_RANGE}): ${names}`);
   }
 };
 
@@ -24,53 +24,53 @@ const pathPoints = [
   { x: 15, y: 7 },
 ];
 
-const ENEMY_ARCHETYPE_PIXELS: Record<EnemyType, string[]> = {
+const ENEMY_ARCHETYPE_PIXELS: Record<FoeType, string[]> = {
   skirmisher: [
     "........",
-    "..a.....",
-    ".aa.....",
-    ".ac.....",
+    "..aa....",
+    ".a.a....",
+    ".aac....",
     ".aa.....",
     "..a.....",
     ".a.a....",
-    ".....a..",
+    "..a.....",
   ],
   raider: [
-    "..bb....",
+    "..bbb...",
+    ".babbb..",
+    "babbab..",
+    "bbacbb..",
     ".babb...",
-    "baabbb..",
-    "baacbb..",
-    ".baab...",
-    "..bb....",
+    "..bbb...",
     ".b..b...",
     "b....b..",
   ],
   bruiser: [
-    "..bbb...",
-    ".bbbbb..",
-    "bbabbb..",
-    "bbacbb..",
-    ".bbbbb..",
-    "..bbb...",
-    ".bb..b..",
-    "b....b..",
-  ],
-  bulwark: [
     "..bbbb..",
     ".bbbbbb.",
-    "bbbbbbbb",
+    "bbbabbbb",
     "bbbacbbb",
     "bbbbbbbb",
     ".bbbbbb.",
     "..bbbb..",
     ".bb..bb.",
   ],
+  bulwark: [
+    "..bbbb..",
+    ".bbbbbb.",
+    "bbbbbbbb",
+    "bbbcbbbb",
+    "bbbbbbbb",
+    ".bbbbbb.",
+    ".bbbbbb.",
+    "..b..b..",
+  ],
   elite: [
     "..c..c..",
     ".bbbbbb.",
-    "bbabbbb.",
-    "bbacbbb.",
-    ".bbbabb.",
+    "bbbabbbb",
+    "bbbcbbbb",
+    ".bbbbbb.",
     "..bbbb..",
     ".b..b...",
     "b....b..",
@@ -88,14 +88,14 @@ const ENEMY_ARCHETYPE_PIXELS: Record<EnemyType, string[]> = {
 };
 
 const ENEMY_FACTION_PALETTES: Record<FactionId, Record<string, string>> = {
-  humans: { a: "#7a6b62", b: "#c7c0b5", c: "#c14a3f", d: "#f2d5a0" },
-  orcs: { a: "#2f2a25", b: "#5f8f4a", c: "#c14a3f", d: "#7a4b2f" },
-  elves: { a: "#e7e1d6", b: "#6aa88f", c: "#cfa94a", d: "#f4efe6" },
-  undead: { a: "#2b3a3d", b: "#6e8a8f", c: "#9fc4c9", d: "#c7c0b5" },
-  dwarves: { a: "#5a4b40", b: "#b07a4a", c: "#f0dfc2", d: "#8b6b3f" },
-  spirits: { a: "#e7f4ff", b: "#9bd2ff", c: "#6aa6d6", d: "#f8f4ff" },
-  demons: { a: "#4a1c1c", b: "#b12c2c", c: "#f2b0a0", d: "#f2b36d" },
-  dragons: { a: "#6b3c1d", b: "#cf8a3d", c: "#f2d5a0", d: "#8b6b3f" },
+  humans: { a: "#7b5e4a", b: "#c2b6a6", c: "#b8443a", d: "#e8d4a2" },
+  orcs: { a: "#2f3a2a", b: "#5f8c44", c: "#c14a3f", d: "#7a4b2f" },
+  elves: { a: "#cfe7d6", b: "#5ea884", c: "#cfa94a", d: "#f4efe6" },
+  undead: { a: "#2f3436", b: "#7a8a8c", c: "#9fd0d4", d: "#c7c0b5" },
+  dwarves: { a: "#4f3c32", b: "#b07a4a", c: "#f0dfc2", d: "#8b6b3f" },
+  spirits: { a: "#e7f4ff", b: "#8bc8ff", c: "#6aa6d6", d: "#f8f4ff" },
+  demons: { a: "#3d1616", b: "#b12c2c", c: "#f2b0a0", d: "#f2b36d" },
+  dragons: { a: "#3f2a1b", b: "#7e5c3a", c: "#f2d5a0", d: "#8b6b3f" },
 };
 
 const buildEnemySprite = (pixels: string[], palette: Record<string, string>): PixelSprite => ({
@@ -103,17 +103,41 @@ const buildEnemySprite = (pixels: string[], palette: Record<string, string>): Pi
   colors: palette,
 });
 
-const enemySprites: Record<FactionId, Record<EnemyType, PixelSprite>> = Object.fromEntries(
+const foeSprites: Record<FactionId, Record<FoeType, PixelSprite>> = Object.fromEntries(
   Object.entries(ENEMY_FACTION_PALETTES).map(([faction, palette]) => [
     faction,
     Object.fromEntries(
       Object.entries(ENEMY_ARCHETYPE_PIXELS).map(([type, pixels]) => [type, buildEnemySprite(pixels, palette)]),
     ),
   ]),
-) as Record<FactionId, Record<EnemyType, PixelSprite>>;
+) as Record<FactionId, Record<FoeType, PixelSprite>>;
 
-const towerSprites: Record<string, PixelSprite> = {
-  [TOWER_IDS.mage]: {
+const defenseSprites: Record<string, PixelSprite> = {
+  [DEFENSE_IDS.barbarian]: {
+    pixels: [
+      "....xx......",
+      "...xRRx.....",
+      "..xRRRRx....",
+      ".xRRrRRRx...",
+      ".xRRRRRRx...",
+      "..xRRRRx....",
+      "..xWWwwWx...",
+      ".xWWWWWwx...",
+      ".xWWwwWwx...",
+      "xWWWWWWWWs.",
+      "xWWWwWWxxs.",
+      ".xWWWWWxxs.",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      R: "#7a2f2f",
+      r: "#b24b2f",
+      W: "#c7c0b5",
+      w: "#9f968a",
+      s: "#6d4b2c",
+    },
+  },
+  [DEFENSE_IDS.bard]: {
     pixels: [
       "....xx......",
       "...xxxx.....",
@@ -130,16 +154,94 @@ const towerSprites: Record<string, PixelSprite> = {
     ],
     colors: {
       x: "#1a1a1a",
-      H: "#8a5a2b",
-      h: "#b6813a",
-      B: "#2e5fa8",
-      b: "#1f3f70",
-      e: "#f4d35e",
-      s: "#caa06a",
-      S: "#8b6b3f",
+      H: "#7b3f8e",
+      h: "#a161c2",
+      B: "#3a4f8c",
+      b: "#2b3a66",
+      e: "#f2d47a",
+      s: "#b08555",
+      S: "#6b4a2c",
     },
   },
-  [TOWER_IDS.archer]: {
+  [DEFENSE_IDS.cleric]: {
+    pixels: [
+      "....xx......",
+      "...xxxx.....",
+      "..xHhhHx....",
+      ".xHHhHHHx...",
+      ".xHHHHHHx...",
+      "..xHHHHx....",
+      "..xBBeeBx...",
+      ".xBBBBBbx.s.",
+      ".xBBBBbbx.s.",
+      "xBBBBBBBBx.s",
+      "xBBBBbBBxxS.",
+      ".xBBBBBBxxS.",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      H: "#c7a24b",
+      h: "#e6c36f",
+      B: "#d8d0bb",
+      b: "#b9ad93",
+      e: "#f2e8c6",
+      s: "#a07a3e",
+      S: "#6b4a2c",
+    },
+  },
+  [DEFENSE_IDS.druid]: {
+    pixels: [
+      "....xx......",
+      "...xxxx.....",
+      "..xHhhHx....",
+      ".xHHhHHHx...",
+      ".xHHHHHHx...",
+      "..xHHHHx....",
+      "..xBBeeBx...",
+      ".xBBBBBbx.s.",
+      ".xBBBBbbx.s.",
+      "xBBBBBBBBx.s",
+      "xBBBBbBBxxS.",
+      ".xBBBBBBxxS.",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      H: "#3e6b3f",
+      h: "#5a8c55",
+      B: "#2c4a32",
+      b: "#223a27",
+      e: "#c4b874",
+      s: "#7a5a33",
+      S: "#5a4326",
+    },
+  },
+  [DEFENSE_IDS.wizard]: {
+    pixels: [
+      "....xx......",
+      "...xxxx.....",
+      "..xHhhHx....",
+      ".xHHhHHHx...",
+      ".xHHHHHHx...",
+      "..xHHHHx....",
+      "..xBBeeBx...",
+      ".xBBBBBbx.s.",
+      ".xBBBBbbx.s.",
+      "xBBBBBBBBx.s",
+      "xBBBBbBBxxS.",
+      ".xBBBBBBxxS.",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      H: "#4c2a6b",
+      h: "#6a3f8e",
+      B: "#2f5f9e",
+      b: "#1d3a66",
+      e: "#f2d47a",
+      s: "#b08555",
+      S: "#6b4a2c",
+    },
+  },
+  [DEFENSE_IDS.ranger]: {
     pixels: [
       "....xx......",
       "...xGGx.....",
@@ -157,13 +259,13 @@ const towerSprites: Record<string, PixelSprite> = {
     colors: {
       x: "#1a1a1a",
       G: "#2f6b4b",
-      g: "#3c8a5f",
-      E: "#e7c27d",
-      e: "#c59b53",
-      s: "#8b6b3f",
+      g: "#3f8f61",
+      E: "#d9b574",
+      e: "#b48947",
+      s: "#7a5732",
     },
   },
-  [TOWER_IDS.blade]: {
+  [DEFENSE_IDS.fighter]: {
     pixels: [
       "....xx......",
       "...xRRx.....",
@@ -180,14 +282,14 @@ const towerSprites: Record<string, PixelSprite> = {
     ],
     colors: {
       x: "#1a1a1a",
-      R: "#8a3b3b",
-      r: "#b14b4b",
+      R: "#566072",
+      r: "#78839a",
       W: "#c7c0b5",
       w: "#9f968a",
-      s: "#8b6b3f",
+      s: "#6d4b2c",
     },
   },
-  [TOWER_IDS.warden]: {
+  [DEFENSE_IDS.paladin]: {
     pixels: [
       "....xx......",
       "...xSSx.....",
@@ -204,15 +306,115 @@ const towerSprites: Record<string, PixelSprite> = {
     ],
     colors: {
       x: "#1a1a1a",
-      S: "#6c7b86",
-      s: "#8a99a3",
-      U: "#8ab4d6",
-      u: "#6d98bc",
-      Q: "#c7c0b5",
-      t: "#8b6b3f",
+      S: "#b08a3b",
+      s: "#d2a85c",
+      U: "#f0e7cf",
+      u: "#c8b792",
+      Q: "#a07a3e",
+      t: "#6b4a2c",
     },
   },
-  [TOWER_IDS.catapult]: {
+  [DEFENSE_IDS.monk]: {
+    pixels: [
+      "....xx......",
+      "...xRRx.....",
+      "..xRRRRx....",
+      ".xRRrRRRx...",
+      ".xRRRRRRx...",
+      "..xRRRRx....",
+      "..xWWwwWx...",
+      ".xWWWWWwx...",
+      ".xWWwwWwx...",
+      "xWWWWWWWWs.",
+      "xWWWwWWxxs.",
+      ".xWWWWWxxs.",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      R: "#b9893a",
+      r: "#d7b26a",
+      W: "#c7c0b5",
+      w: "#9f968a",
+      s: "#6d4b2c",
+    },
+  },
+  [DEFENSE_IDS.rogue]: {
+    pixels: [
+      "....xx......",
+      "...xRRx.....",
+      "..xRRRRx....",
+      ".xRRrRRRx...",
+      ".xRRRRRRx...",
+      "..xRRRRx....",
+      "..xWWwwWx...",
+      ".xWWWWWwx...",
+      ".xWWwwWwx...",
+      "xWWWWWWWWs.",
+      "xWWWwWWxxs.",
+      ".xWWWWWxxs.",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      R: "#4f5564",
+      r: "#6a7386",
+      W: "#c7c0b5",
+      w: "#9f968a",
+      s: "#5a4326",
+    },
+  },
+  [DEFENSE_IDS.sorcerer]: {
+    pixels: [
+      "....xx......",
+      "...xxxx.....",
+      "..xHhhHx....",
+      ".xHHhHHHx...",
+      ".xHHHHHHx...",
+      "..xHHHHx....",
+      "..xBBeeBx...",
+      ".xBBBBBbx.s.",
+      ".xBBBBbbx.s.",
+      "xBBBBBBBBx.s",
+      "xBBBBbBBxxS.",
+      ".xBBBBBBxxS.",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      H: "#8a2f2f",
+      h: "#d05a3a",
+      B: "#4a2a2a",
+      b: "#3a1f1f",
+      e: "#f2d47a",
+      s: "#b08555",
+      S: "#6b4a2c",
+    },
+  },
+  [DEFENSE_IDS.warlock]: {
+    pixels: [
+      "....xx......",
+      "...xxxx.....",
+      "..xHhhHx....",
+      ".xHHhHHHx...",
+      ".xHHHHHHx...",
+      "..xHHHHx....",
+      "..xBBeeBx...",
+      ".xBBBBBbx.s.",
+      ".xBBBBbbx.s.",
+      "xBBBBBBBBx.s",
+      "xBBBBbBBxxS.",
+      ".xBBBBBBxxS.",
+    ],
+    colors: {
+      x: "#1a1a1a",
+      H: "#4b2f6b",
+      h: "#6b4fa3",
+      B: "#2a1f3f",
+      b: "#1f1630",
+      e: "#b5a6d6",
+      s: "#8b6b3f",
+      S: "#5a4326",
+    },
+  },
+  [DEFENSE_IDS.siegeEngine]: {
     pixels: [
       "....xx......",
       "...xTTx.....",
@@ -229,121 +431,145 @@ const towerSprites: Record<string, PixelSprite> = {
     ],
     colors: {
       x: "#1a1a1a",
-      T: "#6b4d2e",
-      t: "#8a6b42",
+      T: "#5f4326",
+      t: "#83603a",
       C: "#b07a4a",
-      c: "#8b6b3f",
+      c: "#7a5632",
     },
   },
 };
 
-const trapSprites: Record<string, PixelSprite> = {
-  [TRAP_IDS.tacks]: {
+const spellScrollSprites: Record<string, PixelSprite> = {
+  [SPELL_SCROLL_IDS.tacks]: {
     pixels: [
       "........",
       "..x..x..",
       ".x.x.x..",
-      "..xxxx..",
-      ".x.xx.x.",
-      "..xxxx..",
-      ".x.x.x..",
-      "........",
-    ],
-    colors: {
-      x: "#2b1f1f",
-    },
-  },
-  [TRAP_IDS.spike]: {
-    pixels: [
-      "........",
-      "...x....",
       "..xxx...",
       ".x.x.x..",
-      "x..x..x.",
-      ".x.x.x..",
+      "..x..x..",
+      "........",
+      "........",
+      "........",
+    ],
+    colors: {
+      x: "#2b221b",
+    },
+  },
+  [SPELL_SCROLL_IDS.spike]: {
+    pixels: [
+      "........",
       "..xxx...",
-      "...x....",
-      "........",
-    ],
-    colors: {
-      x: "#8a6f5a",
-    },
-  },
-  [TRAP_IDS.glue]: {
-    pixels: [
-      "........",
-      "...gg...",
-      "..gggg..",
-      ".ggggg..",
-      ".ggggg..",
-      "..gggg..",
-      "...gg...",
+      ".xooo...",
+      ".xooo...",
+      ".xooo...",
+      "..xxx...",
       "........",
       "........",
     ],
     colors: {
-      g: "#d6bf6a",
+      x: "#a2855f",
+      o: "#2a2420",
     },
   },
-  [TRAP_IDS.shock]: {
+  [SPELL_SCROLL_IDS.glue]: {
     pixels: [
       "........",
-      "...y....",
+      "..w.w...",
+      ".w.www..",
+      "..www...",
+      "..www...",
+      ".w.www..",
+      "..w.w...",
+      "........",
+      "........",
+      "........",
+    ],
+    colors: {
+      w: "#c9c2a8",
+    },
+  },
+  [SPELL_SCROLL_IDS.shock]: {
+    pixels: [
+      "....y...",
+      "...yy...",
       "..y.y...",
-      ".y.y.y..",
+      ".y..y...",
       "..y.y...",
+      "...yy...",
       "...y....",
-      "..y.....",
       "........",
     ],
     colors: {
-      y: "#f6d76a",
+      y: "#f2d47a",
     },
   },
-  [TRAP_IDS.bomb]: {
+  [SPELL_SCROLL_IDS.bomb]: {
     pixels: [
-      "........",
-      "..xxx...",
-      ".xxxxx..",
-      ".xxxyx..",
-      ".xxxxx..",
-      "..xxx...",
-      "...y....",
-      "...y....",
-      "........",
+      "................................",
+      "................................",
+      ".............YYYY...............",
+      "............YYYYYY..............",
+      ".............YYYY...............",
+      "..............YY................",
+      "..............BB................",
+      "..........BBBBBBBBBB............",
+      ".......BBBBBDDDDDDBBBBB.........",
+      ".....BBBBBDDDGGGGDDDDBBBBB.......",
+      "....BBBBBDDGGGGGGGGDDDBBBB.......",
+      "...BBBBBDDGGGGGGGGGGDDDBBBB......",
+      "..BBBBBDDGGGGWWWWGGGGDDDBBBB.....",
+      "..BBBBBDDGGGGWGGGWGGGGDDBBBB.....",
+      "..BBBBBDDGGGGGGGGGGGGDDBBBB......",
+      "..BBBBBDDGGGGGGGGGGGGDDBBBB......",
+      "...BBBBBDDGGGGGGGGGGDDDBBBB......",
+      "....BBBBBDDGGGGGGGGDDDBBBB.......",
+      ".....BBBBBDDDGGGGDDDDBBBBB.......",
+      ".......BBBBBDDDDDDBBBBB..........",
+      "..........BBBBBBBBBB............",
+      "..............BB................",
+      "..............BB................",
+      "..............BB................",
+      "..............BB................",
+      "..............BB................",
+      "..............O.................",
+      ".............OOO................",
+      "..............O.................",
+      "................................",
+      "................................",
+      "................................",
     ],
     colors: {
-      x: "#2a2a2a",
-      y: "#d3643a",
+      f: "#d3643a",
+      o: "#f2d47a",
     },
   },
-  [TRAP_IDS.nuke]: {
+  [SPELL_SCROLL_IDS.nuke]: {
     pixels: [
-      "........",
-      "..xxx...",
-      ".xooox..",
-      ".xooxx...",
-      ".xooox..",
-      "..xxx...",
-      "...y....",
+      "...m....",
+      "..mmm...",
+      ".mmomm..",
+      ".mmoom..",
+      ".mmomm..",
+      "..mmm...",
+      "...m....",
       "........",
     ],
     colors: {
-      x: "#2b2b2b",
+      m: "#4a3a2a",
       o: "#d88f3a",
-      y: "#f2d65c",
     },
   },
 };
 
 export {
-  MIN_TOWER_RANGE,
-  assertTowerRanges,
-  enemySprites,
+  MIN_DEFENSE_RANGE,
+  assertDefenseRanges,
+  foeSprites,
   grid,
   pathPoints,
-  trapSprites,
-  trapTypes,
-  towerSprites,
-  towerTypes,
+  spellScrollSprites,
+  spellScrollTypes,
+  defenseSprites,
+  defenseTypes,
 };

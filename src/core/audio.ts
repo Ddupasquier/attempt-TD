@@ -1,5 +1,5 @@
-import { TOWER_IDS } from "../constants/towerIds";
-import { TRAP_IDS } from "../constants/trapIds";
+import { DEFENSE_IDS } from "../constants/defenseIds";
+import { SPELL_SCROLL_IDS } from "../constants/spellScrollIds";
 import type { ToneConfig } from "../types/core/audioTypes";
 
 const createAudioSystem = () => {
@@ -7,9 +7,9 @@ const createAudioSystem = () => {
   let isUnlocked = false;
 
   const tonePresets: Record<string, Omit<ToneConfig, "duration">> = {
-    [TOWER_IDS.mage]: { freq: 520, type: "triangle", gain: 0.06 },
-    [TOWER_IDS.archer]: { freq: 740, type: "square", gain: 0.05 },
-    [TOWER_IDS.blade]: { freq: 360, type: "square", gain: 0.07 },
+    [DEFENSE_IDS.wizard]: { freq: 520, type: "triangle", gain: 0.06 },
+    [DEFENSE_IDS.ranger]: { freq: 740, type: "square", gain: 0.05 },
+    [DEFENSE_IDS.fighter]: { freq: 360, type: "square", gain: 0.07 },
   };
 
   const ensureAudioContext = () => {
@@ -110,43 +110,43 @@ const createAudioSystem = () => {
     ensureAudioContext();
   };
 
-  const playDamageSound = (towerTypeId: string, soundEnabled: boolean) => {
+  const playDamageSound = (defenseTypeId: string, soundEnabled: boolean) => {
     if (!soundEnabled) return;
     if (!isUnlocked) return;
     ensureAudioContext();
     if (!audioCtx) return;
-    if (towerTypeId === TOWER_IDS.catapult) {
+    if (defenseTypeId === DEFENSE_IDS.siegeEngine) {
       playCrash();
       return;
     }
-    const tone = tonePresets[towerTypeId];
+    const tone = tonePresets[defenseTypeId];
     if (!tone) return;
     playTone({ ...tone, duration: 0.08 });
   };
 
-  const playTrapSound = (trapId: string, soundEnabled: boolean) => {
+  const playSpellScrollSound = (scrollId: string, soundEnabled: boolean) => {
     if (!soundEnabled) return;
     if (!isUnlocked) return;
     ensureAudioContext();
     if (!audioCtx) return;
-    if (trapId === TRAP_IDS.shock) {
+    if (scrollId === SPELL_SCROLL_IDS.shock) {
       playNoise(0.12, 0.08, "bandpass", 1200);
       return;
     }
-    if (trapId === TRAP_IDS.bomb) {
+    if (scrollId === SPELL_SCROLL_IDS.bomb) {
       playBoom();
       return;
     }
-    if (trapId === TRAP_IDS.nuke) {
+    if (scrollId === SPELL_SCROLL_IDS.nuke) {
       playBigBoom();
       return;
     }
-    if (trapId === TRAP_IDS.glue) {
+    if (scrollId === SPELL_SCROLL_IDS.glue) {
       playTone({ freq: 160, duration: 0.08, type: "sine", gain: 0.05 });
     }
   };
 
-  return { unlock, playDamageSound, playTrapSound };
+  return { unlock, playDamageSound, playSpellScrollSound };
 };
 
 export { createAudioSystem };

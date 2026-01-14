@@ -1,14 +1,14 @@
 type UiState = {
-  selectedTowerTypeId: string | null;
-  selectedTowerPopup: TowerUpgradePopup | null;
+  selectedDefenseTypeId: string | null;
+  selectedDefensePopup: DefenseUpgradePopup | null;
   gold: number;
-  lives: number;
+  hp: number;
   wave: number;
-  enemyFactionName: string;
+  foeFactionName: string;
   soundEnabled: boolean;
   autoWaveEnabled: boolean;
   showDamagePopups: boolean;
-  trapCooldowns: Record<string, number>;
+  spellScrollCooldowns: Record<string, number>;
   speedMultiplier: number;
   isCountingDown: boolean;
   countdownRemaining: number;
@@ -18,7 +18,7 @@ type UiState = {
   mapHeight: number;
 };
 
-type TowerUpgradePopup = {
+type DefenseUpgradePopup = {
   id: string;
   typeId: string;
   name: string;
@@ -45,4 +45,4 @@ type TowerUpgradePopup = {
   } | null;
 };
 
-export type { TowerUpgradePopup, UiState };
+export type { DefenseUpgradePopup, UiState };

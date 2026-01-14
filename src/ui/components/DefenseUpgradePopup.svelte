@@ -2,11 +2,11 @@
   import { onDestroy, onMount } from "svelte";
   import FloatingPanel from "./FloatingPanel.svelte";
   import { UI_TEXT } from "../text";
-  import { TOWER_IDS } from "../../constants/towerIds";
-  import type { TowerUpgradePopupProps } from "../../types/ui/components/TowerUpgradePopup.types";
+  import { DEFENSE_IDS } from "../../constants/defenseIds";
+  import type { DefenseUpgradePopupProps } from "../../types/ui/components/DefenseUpgradePopup.types";
 
   const { popup, boundsWidth, boundsHeight, onUpgrade, onDelete, onSetTarget, onClose } =
-    $props<TowerUpgradePopupProps>();
+    $props<DefenseUpgradePopupProps>();
 
   const formatStat = (value: number) => {
     if (Number.isInteger(value)) return value.toFixed(0);
@@ -57,9 +57,9 @@
     <div class="tower-upgrade__cost">
       {popup.canUpgrade ? UI_TEXT.upgradeCost(popup.upgradeCost) : UI_TEXT.upgradeMax}
     </div>
-    {#if popup.typeId === TOWER_IDS.catapult}
+    {#if popup.typeId === DEFENSE_IDS.siegeEngine}
       <div class="tower-upgrade__target">
-        {UI_TEXT.catapultTargetLabel(popup.targetCol, popup.targetRow)}
+        {UI_TEXT.siegeTargetLabel(popup.targetCol, popup.targetRow)}
       </div>
     {/if}
     <div class="tower-upgrade__stats">
@@ -101,14 +101,14 @@
   >
     {UI_TEXT.upgradeButton}
   </button>
-  {#if popup.typeId === TOWER_IDS.catapult}
+  {#if popup.typeId === DEFENSE_IDS.siegeEngine}
     <button
       class="tower-upgrade__button"
       type="button"
-      aria-label={UI_TEXT.catapultSetTargetAria}
+      aria-label={UI_TEXT.siegeSetTargetAria}
       onclick={handleSetTarget}
     >
-      {UI_TEXT.catapultSetTargetLabel}
+      {UI_TEXT.siegeSetTargetLabel}
     </button>
   {/if}
   <button

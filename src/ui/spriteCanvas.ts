@@ -1,6 +1,6 @@
 import type { PixelSprite } from "../types/core/types";
 
-const drawTowerCardSprite = (canvas: HTMLCanvasElement, sprite: PixelSprite) => {
+const drawDefenseCardSprite = (canvas: HTMLCanvasElement, sprite: PixelSprite) => {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   const width = sprite.pixels[0]?.length ?? 8;
@@ -24,12 +24,12 @@ const drawTowerCardSprite = (canvas: HTMLCanvasElement, sprite: PixelSprite) => 
 
 const spriteCanvas = (node: HTMLCanvasElement, sprite: PixelSprite | null) => {
   if (sprite) {
-    drawTowerCardSprite(node, sprite);
+    drawDefenseCardSprite(node, sprite);
   }
   return {
     update(nextSprite: PixelSprite | null) {
       if (nextSprite) {
-        drawTowerCardSprite(node, nextSprite);
+        drawDefenseCardSprite(node, nextSprite);
       }
     },
   };

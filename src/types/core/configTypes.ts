@@ -2,18 +2,18 @@ import type {
   DamageGroupResistances,
   DamageResistances,
   Grid,
-  TowerType,
-  TrapType,
+  DefenseType,
+  SpellScrollType,
 } from "./types";
 
-type TowerLevelStats = {
+type DefenseLevelStats = {
   damageMult: number;
   rangeMult: number;
   rateMult: number;
   knockbackMult: number;
 };
 
-type TowerLevelCostScale = {
+type DefenseLevelCostScale = {
   level: number;
   costMultiplier: number;
 };
@@ -22,32 +22,32 @@ type GameConfig = {
   grid: Grid;
   gameplay: {
     startingGold: number;
-    startingLives: number;
-    maxLives: number;
+    startingHp: number;
+    maxHp: number;
     startingWave: number;
     speedSteps: number[];
     countdownSeconds: number;
     killReward: number;
-    bossLifeLoss: number;
-    flawlessLifeGain: number;
-    bossFlawlessLifeGain: number;
-    enemyTurnStrength: number;
-    enemyArrivalThreshold: number;
+    bossHpLoss: number;
+    flawlessHpGain: number;
+    bossFlawlessHpGain: number;
+    foeTurnStrength: number;
+    foeArrivalThreshold: number;
     knockbackSpeed: number;
     backtrackThreshold: number;
     projectileSpeed: number;
-    catapultProjectileSpeed: number;
-    catapultSplashRadiusTiles: number;
-    archerTreeDamageBonus: number;
+    siegeProjectileSpeed: number;
+    siegeSplashRadiusTiles: number;
+    rangerTreeDamageBonus: number;
   };
-  towerTypes: TowerType[];
-  tower: {
+  defenseTypes: DefenseType[];
+  defense: {
     minRange: number;
   };
-  trapTypes: TrapType[];
-  maxTowerLevel: number;
-  towerLevelStats: TowerLevelStats[];
-  towerLevelCosts: TowerLevelCostScale[];
+  spellScrollTypes: SpellScrollType[];
+  maxDefenseLevel: number;
+  defenseLevelStats: DefenseLevelStats[];
+  defenseLevelCosts: DefenseLevelCostScale[];
   wave: {
     initialSpawnDelay: number;
     spawnInterval: number;
@@ -55,7 +55,7 @@ type GameConfig = {
     spawnsPerWave: number;
     waveReward: number;
   };
-  enemy: {
+  foe: {
     baseHp: number;
     hpPerWave: number;
     baseSpeed: number;
@@ -131,4 +131,4 @@ type GameConfig = {
   };
 };
 
-export type { GameConfig, TowerLevelCostScale, TowerLevelStats };
+export type { GameConfig, DefenseLevelCostScale, DefenseLevelStats };

@@ -1,39 +1,39 @@
 <script lang="ts">
   import { UI_TEXT } from "../text";
-  import TowerCard from "./TowerCard.svelte";
-  import TrapCard from "./TrapCard.svelte";
+  import DefenseCard from "./DefenseCard.svelte";
+  import SpellScrollCard from "./SpellScrollCard.svelte";
   import type { HudOverlayProps } from "../../types/ui/components/HudOverlay.types";
 
   const {
-    towerTypes,
-    towerSprites,
-    trapTypes,
-    trapSprites,
-    trapCooldowns,
-    selectedTowerTypeId,
+    defenseTypes,
+    defenseSprites,
+    spellScrollTypes,
+    spellScrollSprites,
+    spellScrollCooldowns,
+    selectedDefenseTypeId,
     gold,
-    lives,
+    hp,
     wave,
-    enemyFactionName,
+    foeFactionName,
     isCollapsed,
     onToggle,
-    onSelectTower,
-    onStartDragTower,
-    onStartDragTrap,
+    onSelectDefense,
+    onStartDragDefense,
+    onStartDragSpellScroll,
   } = $props<HudOverlayProps>();
 
   const toggleLabel = $derived(isCollapsed ? UI_TEXT.hudFabLabel : UI_TEXT.hudToggleHide);
-  let selectedTrapTypeId = $state<string | null>(null);
+  let selectedSpellScrollTypeId = $state<string | null>(null);
 
-  const handleSelectTrap = (trapId: string | null) => {
-    selectedTrapTypeId = trapId;
+  const handleSelectSpellScroll = (spellScrollId: string | null) => {
+    selectedSpellScrollTypeId = spellScrollId;
   };
 </script>
 
 <div class="hud-overlay">
   <div class="hud-header">
     <div class="title">{UI_TEXT.appTitle}</div>
-    <div class="stats">{UI_TEXT.stats(gold, lives, wave)}</div>
+    <div class="stats">{UI_TEXT.stats(gold, hp, wave)}</div>
     <button class="hud-toggle" type="button" onclick={onToggle}>{toggleLabel}</button>
   </div>
   <div class="hud hud-body" class:is-collapsed={isCollapsed}>
@@ -41,13 +41,14 @@
       <div class="label">{UI_TEXT.towerLabel}</div>
       <div class="tower-hint">{UI_TEXT.hintTowerSelect}</div>
       <div class="tower-list">
-        {#each towerTypes as tower (tower.id)}
-          <TowerCard
-            tower={tower}
-            sprite={towerSprites[tower.id]}
-            isActive={selectedTowerTypeId === tower.id}
-            onSelect={onSelectTower}
-            onStartDrag={onStartDragTower}
+        {#each defenseTypes as defense (defense.id)}
+          <DefenseCard
+            defense={defense}
+            sprite={defenseSprites[defense.id]}
+            isActive={selectedDefenseTypeId === defense.id}
+            canAfford={gold >= defense.cost}
+            onSelect={onSelectDefense}
+            onStartDrag={onStartDragDefense}
           />
         {/each}
       </div>
@@ -56,21 +57,21 @@
       <div class="label">{UI_TEXT.trapLabel}</div>
       <div class="tower-hint">{UI_TEXT.hintTrapDrag}</div>
       <div class="tower-list">
-        {#each trapTypes as trap (trap.id)}
-          <TrapCard
-            trap={trap}
-            sprite={trapSprites[trap.id]}
-            isActive={selectedTrapTypeId === trap.id}
-            cooldownRemaining={trapCooldowns[trap.id]}
-            onSelect={handleSelectTrap}
-            onStartDrag={onStartDragTrap}
+        {#each spellScrollTypes as spellScroll (spellScroll.id)}
+          <SpellScrollCard
+            spellScroll={spellScroll}
+            sprite={spellScrollSprites[spellScroll.id]}
+            isActive={selectedSpellScrollTypeId === spellScroll.id}
+            cooldownRemaining={spellScrollCooldowns[spellScroll.id]}
+            onSelect={handleSelectSpellScroll}
+            onStartDrag={onStartDragSpellScroll}
           />
         {/each}
       </div>
     </div>
     <div class="hud-section">
       <div class="label">{UI_TEXT.factionsLabel}</div>
-      <div class="factions">{UI_TEXT.enemyFaction(enemyFactionName)}</div>
+      <div class="factions">{UI_TEXT.foeFaction(foeFactionName)}</div>
     </div>
   </div>
   <div class="hint hud-hint" class:is-collapsed={isCollapsed}>{UI_TEXT.hintDrag}</div>

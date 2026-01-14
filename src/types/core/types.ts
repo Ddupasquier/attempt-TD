@@ -19,7 +19,13 @@ type DamageResistances = Partial<Record<DamageType, number>>;
 
 type DamageGroupResistances = Partial<Record<DamageGroup, number>>;
 
-type TowerType = {
+type DefenseAuraBonuses = {
+  damageMult: number;
+  rangeMult: number;
+  rateMult: number;
+};
+
+type DefenseType = {
   id: string;
   name: string;
   types: string[];
@@ -31,13 +37,15 @@ type TowerType = {
   critChance: number;
   critMultiplier: number;
   knockback: number;
+  auraRangeTiles?: number;
+  auraBonuses?: DefenseAuraBonuses;
   damageResistances?: DamageResistances;
   damageGroupResistances?: DamageGroupResistances;
   color: string;
   description: string;
 };
 
-type TrapType = {
+type SpellScrollType = {
   id: string;
   name: string;
   types: string[];
@@ -47,6 +55,7 @@ type TrapType = {
   cooldownPerWave?: boolean;
   damage?: number;
   damageType?: DamageType;
+  knockbackDistanceTiles?: number;
   splashRadiusTiles?: number;
   slowMultiplier?: number;
   slowDuration?: number;
@@ -54,11 +63,11 @@ type TrapType = {
   description: string;
 };
 
-type Tower = {
+type Defense = {
   id: string;
   col: number;
   row: number;
-  type: TowerType;
+  type: DefenseType;
   cooldown: number;
   rangeBonus: number;
   damageBonus: number;
@@ -77,14 +86,14 @@ type FactionId =
   | "demons"
   | "dragons";
 
-type Enemy = {
+type Foe = {
   id: string;
   hp: number;
   maxHp: number;
   speed: number;
   waveId: string;
   faction: FactionId;
-  type: EnemyType;
+  type: FoeType;
   targetIndex: number;
   isBoss?: boolean;
   sizeScale?: number;
@@ -98,7 +107,7 @@ type Enemy = {
   knockbackResistRemaining?: number;
   slowRemaining?: number;
   slowMultiplier?: number;
-  lastTrapTile?: string;
+  lastSpellScrollTile?: string;
   reachedEnd?: boolean;
   damageResistances?: DamageResistances;
   damageGroupResistances?: DamageGroupResistances;
@@ -110,24 +119,24 @@ type WaveState = {
   spawnTimer: number;
   spawnIndex: number;
   totalSpawns: number;
-  remainingEnemies: number;
+  remainingFoes: number;
   bossSpawned?: boolean;
-  livesLost?: boolean;
+  hpLost?: boolean;
 };
 
-type EnemyType = "skirmisher" | "raider" | "bruiser" | "bulwark" | "elite" | "boss";
+type FoeType = "skirmisher" | "raider" | "bruiser" | "bulwark" | "elite" | "boss";
 
 type Projectile = {
   x: number;
   y: number;
-  target?: Enemy;
+  target?: Foe;
   targetX?: number;
   targetY?: number;
   speed: number;
   damage: number;
   damageType: DamageType;
   color: string;
-  towerTypeId: string;
+  defenseTypeId: string;
   originX: number;
   originY: number;
   maxRange: number;
@@ -136,11 +145,11 @@ type Projectile = {
   isCrit?: boolean;
 };
 
-type Trap = {
+type SpellScroll = {
   id: string;
   col: number;
   row: number;
-  type: TrapType;
+  type: SpellScrollType;
   triggersRemaining?: number;
 };
 
@@ -158,17 +167,17 @@ type Grid = {
 
 type GameState = {
   gold: number;
-  lives: number;
-  maxLives: number;
+  hp: number;
+  maxHp: number;
   wave: number;
-  towers: Tower[];
-  traps: Trap[];
-  trapCooldowns: Record<string, number>;
-  enemies: Enemy[];
+  defenses: Defense[];
+  spellScrolls: SpellScroll[];
+  spellScrollCooldowns: Record<string, number>;
+  foes: Foe[];
   projectiles: Projectile[];
   effects: SplashEffect[];
   damagePopups: DamagePopup[];
-  selectedTower: TowerType | null;
+  selectedDefense: DefenseType | null;
   waves: WaveState[];
   isCountingDown: boolean;
   countdownRemaining: number;
@@ -198,12 +207,15 @@ type DamagePopup = {
 
 type SaveData = {
   gold: number;
-  lives: number;
+  hp?: number;
+  lives?: number;
   wave: number;
   soundEnabled: boolean;
   autoWaveEnabled?: boolean;
   showDamagePopups?: boolean;
-  selectedTowerId: string | null;
+  selectedDefenseId?: string | null;
+  selectedTowerId?: string | null;
+  spellScrollCooldowns?: Record<string, number>;
   trapCooldowns?: Record<string, number>;
   isCountingDown?: boolean;
   countdownRemaining?: number;
@@ -213,9 +225,31 @@ type SaveData = {
     spawnTimer: number;
     spawnIndex: number;
     totalSpawns: number;
-    remainingEnemies: number;
+    remainingFoes: number;
     bossSpawned?: boolean;
+    hpLost?: boolean;
     livesLost?: boolean;
+  }>;
+  foes?: Array<{
+    id: string;
+    hp: number;
+    maxHp: number;
+    speed: number;
+    waveId: string;
+    faction: FactionId;
+    type: FoeType;
+    targetIndex: number;
+    isBoss?: boolean;
+    sizeScale?: number;
+    x?: number;
+    y?: number;
+    vx?: number;
+    vy?: number;
+    knockbackRemaining?: number;
+    knockbackResistRemaining?: number;
+    slowRemaining?: number;
+    slowMultiplier?: number;
+    lastSpellScrollTile?: string;
   }>;
   enemies?: Array<{
     id: string;
@@ -224,7 +258,7 @@ type SaveData = {
     speed: number;
     waveId: string;
     faction: FactionId;
-    type: EnemyType;
+    type: FoeType;
     targetIndex: number;
     isBoss?: boolean;
     sizeScale?: number;
@@ -238,13 +272,28 @@ type SaveData = {
     slowMultiplier?: number;
     lastTrapTile?: string;
   }>;
+  spellScrolls?: Array<{
+    col: number;
+    row: number;
+    typeId: string;
+    triggersRemaining?: number;
+  }>;
   traps?: Array<{
     col: number;
     row: number;
     typeId: string;
     triggersRemaining?: number;
   }>;
-  towers: Array<{
+  defenses: Array<{
+    col: number;
+    row: number;
+    typeId: string;
+    level?: number;
+    cooldown?: number;
+    targetCol?: number;
+    targetRow?: number;
+  }>;
+  towers?: Array<{
     col: number;
     row: number;
     typeId: string;
@@ -265,8 +314,9 @@ export type {
   DamageGroupResistances,
   DamageResistances,
   DamageType,
-  Enemy,
-  EnemyType,
+  DefenseAuraBonuses,
+  Foe,
+  FoeType,
   FactionConfig,
   FactionId,
   GameState,
@@ -276,9 +326,9 @@ export type {
   SaveData,
   SplashEffect,
   DamagePopup,
-  Trap,
-  TrapType,
-  Tower,
-  TowerType,
+  SpellScroll,
+  SpellScrollType,
+  Defense,
+  DefenseType,
   WaveState,
 };

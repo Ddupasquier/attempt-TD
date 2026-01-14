@@ -9,7 +9,7 @@ type DamagePopupStyle = {
 type DevConfig = {
   enabled: boolean;
   infiniteGold: boolean;
-  catapultDamagePopup: {
+  siegeDamagePopup: {
     enabled: boolean;
     color?: string;
     duration?: number;
@@ -18,7 +18,7 @@ type DevConfig = {
   godMode: {
     enabled: boolean;
     invulnerableBase: boolean;
-    oneShotEnemies: boolean;
+    oneShotFoes: boolean;
     noCooldowns: boolean;
   };
 };
@@ -38,13 +38,13 @@ if (!local && import.meta.env.DEV) {
 const DEFAULT_CONFIG: DevConfig = {
   enabled: false,
   infiniteGold: false,
-  catapultDamagePopup: {
+  siegeDamagePopup: {
     enabled: false,
   },
   godMode: {
     enabled: false,
     invulnerableBase: false,
-    oneShotEnemies: false,
+    oneShotFoes: false,
     noCooldowns: false,
   },
 };
@@ -53,9 +53,9 @@ const IS_DEV = Boolean(local?.IS_DEV);
 const DEV_CONFIG: DevConfig = {
   ...DEFAULT_CONFIG,
   ...local?.DEV_CONFIG,
-  catapultDamagePopup: {
-    ...DEFAULT_CONFIG.catapultDamagePopup,
-    ...(local?.DEV_CONFIG?.catapultDamagePopup ?? {}),
+  siegeDamagePopup: {
+    ...DEFAULT_CONFIG.siegeDamagePopup,
+    ...(local?.DEV_CONFIG?.siegeDamagePopup ?? {}),
   },
   godMode: {
     ...DEFAULT_CONFIG.godMode,
@@ -70,10 +70,10 @@ if (!IS_DEV) {
 const getDevConfig = () => DEV_CONFIG;
 const isDevEnabled = () => IS_DEV && DEV_CONFIG.enabled;
 
-const getCatapultDamagePopupStyle = () => {
+const getSiegeDamagePopupStyle = () => {
   if (!isDevEnabled()) return {} as DamagePopupStyle;
-  return DEV_CONFIG.catapultDamagePopup.enabled ? DEV_CONFIG.catapultDamagePopup : ({} as DamagePopupStyle);
+  return DEV_CONFIG.siegeDamagePopup.enabled ? DEV_CONFIG.siegeDamagePopup : ({} as DamagePopupStyle);
 };
 
 export type { DamagePopupStyle, DevConfig };
-export { IS_DEV, getCatapultDamagePopupStyle, getDevConfig, isDevEnabled };
+export { IS_DEV, getDevConfig, getSiegeDamagePopupStyle, isDevEnabled };

@@ -1,34 +1,34 @@
 import type { GameConfig } from "../../types/core/configTypes";
-import { ENEMY_CONFIG } from "./enemies";
+import { FOE_CONFIG } from "./foes";
 import { FACTION_PROGRESSION, getFactionForWave } from "./factions";
 import { GAMEPLAY_CONFIG, GRID_CONFIG } from "./game";
-import { TRAP_CONFIG } from "./traps";
-import { TOWER_CONFIG } from "./towers";
+import { SPELL_SCROLL_CONFIG } from "./spellScrolls";
+import { DEFENSE_CONFIG } from "./defenses";
 import { WAVE_CONFIG } from "./waves";
 
 const GAME_CONFIG: GameConfig = {
   grid: GRID_CONFIG,
   gameplay: GAMEPLAY_CONFIG,
-  towerTypes: TOWER_CONFIG.types,
-  tower: {
-    minRange: TOWER_CONFIG.minRange,
+  defenseTypes: DEFENSE_CONFIG.types,
+  defense: {
+    minRange: DEFENSE_CONFIG.minRange,
   },
-  trapTypes: TRAP_CONFIG.types,
-  maxTowerLevel: TOWER_CONFIG.maxLevel,
-  towerLevelStats: TOWER_CONFIG.levelStats,
-  towerLevelCosts: TOWER_CONFIG.levelCosts,
+  spellScrollTypes: SPELL_SCROLL_CONFIG.types,
+  maxDefenseLevel: DEFENSE_CONFIG.maxLevel,
+  defenseLevelStats: DEFENSE_CONFIG.levelStats,
+  defenseLevelCosts: DEFENSE_CONFIG.levelCosts,
   wave: WAVE_CONFIG,
-  enemy: ENEMY_CONFIG,
+  foe: FOE_CONFIG,
 };
 
 export {
-  ENEMY_CONFIG,
+  DEFENSE_CONFIG,
   FACTION_PROGRESSION,
+  FOE_CONFIG,
   GAME_CONFIG,
   GRID_CONFIG,
   GAMEPLAY_CONFIG,
-  TRAP_CONFIG,
-  TOWER_CONFIG,
+  SPELL_SCROLL_CONFIG,
   WAVE_CONFIG,
   getFactionForWave,
 };

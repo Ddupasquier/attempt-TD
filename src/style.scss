@@ -1,9 +1,9 @@
 :root {
-  --bg: #201b1a;
+  --bg: #1a1613;
   --panel: #2a2321;
   --panel-light: #3b3230;
-  --accent: #e7c27d;
-  --accent-2: #7fd1b9;
+  --accent: #e2c38b;
+  --accent-2: #7db5d6;
   --text: #f4efe6;
   --danger: #e26a5d;
   --pixel-border: #5b473b;
@@ -21,8 +21,8 @@ body {
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at top, rgba(255, 205, 133, 0.12) 0%, rgba(16, 12, 11, 0.92) 45%, #120f0e 100%),
-    linear-gradient(120deg, #1a1312 0%, #2a1f1b 45%, #1a1412 100%);
+    radial-gradient(circle at top, rgba(255, 223, 170, 0.1) 0%, rgba(16, 12, 11, 0.92) 45%, #120f0e 100%),
+    linear-gradient(120deg, #1a1512 0%, #2a211c 45%, #161210 100%);
 }
 
 body.is-fullscreen {
@@ -180,6 +180,18 @@ body.is-fullscreen .game-stage {
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   color: #f4efe6;
   position: relative;
+}
+
+.tower-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  filter: grayscale(0.5);
+}
+
+.tower-card:disabled .tower-card__cost,
+.tower-card:disabled .tower-card__types,
+.tower-card:disabled p {
+  color: rgba(244, 239, 230, 0.5);
 }
 
 .tower-card.active {

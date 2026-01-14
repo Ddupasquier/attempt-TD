@@ -2,17 +2,17 @@ import "./style.scss";
 import {
   GAME_CONFIG,
   RANGED_TREE_RANGE_BONUS,
-  MAX_TOWER_LEVEL,
-  assertTowerRanges,
+  MAX_DEFENSE_LEVEL,
+  assertDefenseRanges,
   buildPathTiles,
-  clampTowerLevel,
+  clampDefenseLevel,
   createAudioSystem,
   createInitialState,
-  enemySprites,
+  foeSprites,
   getFactionForWave,
   getTileSize,
-  getTowerStatsAtLevel,
-  getTowerUpgradeCost,
+  getDefenseStatsAtLevel,
+  getDefenseUpgradeCost,
   grid,
   isTreeTile,
   loadGame,
@@ -20,23 +20,24 @@ import {
   saveGame,
   screenToGrid,
   tileCenter,
-  trapSprites,
-  trapTypes,
-  towerSprites,
-  towerTypes,
+  spellScrollSprites,
+  spellScrollTypes,
+  defenseSprites,
+  defenseTypes,
 } from "./core";
-import type { GameState, TowerType, TrapType } from "./types/core/types";
+import type { GameState, DefenseType, SpellScrollType } from "./types/core/types";
 import { createPixiRenderer } from "./render/pixiRenderer";
-import { isBossWave, spawnBossEnemy, spawnEnemy, updateEnemies } from "./systems/enemies";
+import { isBossWave, spawnBossFoe, spawnFoe, updateFoes } from "./systems/foes";
 import { updateProjectiles } from "./systems/projectiles";
-import { updateTraps } from "./systems/traps";
-import { updateTowers } from "./systems/towers";
+import { updateSpellScrolls } from "./systems/spellScrolls";
+import { updateDefenses } from "./systems/defenses";
 import { startNewWave, updateCountdown, updateWaves } from "./systems/waves";
 import { UiRoot, UI_TEXT, createUiState } from "./ui";
 import { mount } from "svelte";
-import { TOWER_IDS } from "./constants/towerIds";
+import { DEFENSE_IDS } from "./constants/defenseIds";
 import { getDevConfig, isDevEnabled } from "./core/devFlags";
 import { clamp } from "./utils/math";
+import { applyAuraToStats, getDefenseAuraMultipliers } from "./core/defenseAuras";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const uiRoot = document.getElementById("ui-root");
@@ -55,16 +56,16 @@ let lastTime = 0;
 let isDefeated = false;
 let isLoading = false;
 let isStateDirty = false;
-let selectedTowerId: string | null = null;
-let recentTowerId: string | null = null;
+let selectedDefenseId: string | null = null;
+let recentDefenseId: string | null = null;
 let recentRemainingSeconds = 0;
-let dragTowerTypeId: string | null = null;
-let dragTrapTypeId: string | null = null;
+let dragDefenseTypeId: string | null = null;
+let dragSpellScrollTypeId: string | null = null;
 let dragPointer: { x: number; y: number } | null = null;
 let lastPointer: { x: number; y: number } | null = null;
 let isDragging = false;
 let speedIndex = 0;
-let pendingTargetTowerId: string | null = null;
+let pendingTargetDefenseId: string | null = null;
 let currentMapWidth = 0;
 let currentMapHeight = 0;
 let wasWaveActive = false;
@@ -73,6 +74,16 @@ const RANGE_DISPLAY_DURATION = 2.5;
 const UPGRADE_POPUP_WIDTH = 190;
 const UPGRADE_POPUP_HEIGHT = 190;
 const UPGRADE_POPUP_PADDING = 8;
+
+const LEGACY_DEFENSE_ID_MAP: Record<string, string> = {
+  mage: DEFENSE_IDS.wizard,
+  archer: DEFENSE_IDS.ranger,
+  blade: DEFENSE_IDS.fighter,
+  warden: DEFENSE_IDS.paladin,
+  catapult: DEFENSE_IDS.siegeEngine,
+};
+
+const normalizeDefenseId = (id: string | null) => (id ? LEGACY_DEFENSE_ID_MAP[id] ?? id : null);
 
 const markStateDirty = () => {
   if (!isLoading) {
@@ -118,29 +129,29 @@ const updateFullscreenLayout = () => {
   resizeCanvas();
 };
 
-assertTowerRanges();
+assertDefenseRanges();
 
-const canPlaceTower = (col: number, row: number) => {
+const canPlaceDefense = (col: number, row: number) => {
   if (col < 0 || row < 0 || col >= grid.cols || row >= grid.rows) return false;
   if (pathTiles.has(`${col},${row}`)) return false;
-  return !gameState.towers.some((tower) => tower.col === col && tower.row === row);
+  return !gameState.defenses.some((defense) => defense.col === col && defense.row === row);
 };
 
-const canPlaceTrap = (col: number, row: number) => {
+const canPlaceSpellScroll = (col: number, row: number) => {
   if (col < 0 || row < 0 || col >= grid.cols || row >= grid.rows) return false;
   if (!pathTiles.has(`${col},${row}`)) return false;
-  if (gameState.towers.some((tower) => tower.col === col && tower.row === row)) return false;
-  if (gameState.traps.some((trap) => trap.col === col && trap.row === row)) return false;
+  if (gameState.defenses.some((defense) => defense.col === col && defense.row === row)) return false;
+  if (gameState.spellScrolls.some((spellScroll) => spellScroll.col === col && spellScroll.row === row)) return false;
   return true;
 };
 
-const addTower = (col: number, row: number, type: TowerType, rangeBonus: number) => {
-  const defaultTarget = type.id === TOWER_IDS.catapult ? pathPoints[0] : undefined;
+const addDefense = (col: number, row: number, type: DefenseType, rangeBonus: number) => {
+  const defaultTarget = type.id === DEFENSE_IDS.siegeEngine ? pathPoints[0] : undefined;
   const damageBonus =
-    type.id === TOWER_IDS.archer && isTreeTile(col, row, pathTiles)
-      ? GAME_CONFIG.gameplay.archerTreeDamageBonus
+    type.id === DEFENSE_IDS.ranger && isTreeTile(col, row, pathTiles)
+      ? GAME_CONFIG.gameplay.rangerTreeDamageBonus
       : 0;
-  const tower = {
+  const defense = {
     id: crypto.randomUUID(),
     col,
     row,
@@ -152,88 +163,88 @@ const addTower = (col: number, row: number, type: TowerType, rangeBonus: number)
     targetCol: defaultTarget?.x,
     targetRow: defaultTarget?.y,
   };
-  gameState.towers.push(tower);
+  gameState.defenses.push(defense);
   markStateDirty();
-  return tower;
+  return defense;
 };
 
-const addTrap = (col: number, row: number, type: TrapType) => {
-  const trap = {
+const addSpellScroll = (col: number, row: number, type: SpellScrollType) => {
+  const spellScroll = {
     id: crypto.randomUUID(),
     col,
     row,
     type,
     triggersRemaining: type.maxTriggers,
   };
-  gameState.traps.push(trap);
+  gameState.spellScrolls.push(spellScroll);
   markStateDirty();
-  return trap;
+  return spellScroll;
 };
 
-const setSelectedTower = (id: string | null) => {
-  gameState.selectedTower = id ? towerTypes.find((tower) => tower.id === id) || null : null;
+const setSelectedDefense = (id: string | null) => {
+  gameState.selectedDefense = id ? defenseTypes.find((defense) => defense.id === id) || null : null;
   markStateDirty();
 };
 
-const startTowerDrag = (towerTypeId: string) => {
-  dragTowerTypeId = towerTypeId;
-  dragTrapTypeId = null;
+const startDefenseDrag = (defenseTypeId: string) => {
+  dragDefenseTypeId = defenseTypeId;
+  dragSpellScrollTypeId = null;
   isDragging = true;
-  setSelectedTower(towerTypeId);
+  setSelectedDefense(defenseTypeId);
   updateUI();
 };
 
-const startTrapDrag = (trapTypeId: string) => {
-  dragTrapTypeId = trapTypeId;
-  dragTowerTypeId = null;
+const startSpellScrollDrag = (spellScrollTypeId: string) => {
+  dragSpellScrollTypeId = spellScrollTypeId;
+  dragDefenseTypeId = null;
   isDragging = true;
-  selectedTowerId = null;
-  setSelectedTower(null);
+  selectedDefenseId = null;
+  setSelectedDefense(null);
   updateUI();
 };
 
 const updateDragPointer = (event: PointerEvent) => {
   lastPointer = { x: event.clientX, y: event.clientY };
-  if (!isDragging && !pendingTargetTowerId) return;
+  if (!isDragging && !pendingTargetDefenseId) return;
   dragPointer = lastPointer;
 };
 
 const stopDrag = () => {
-  dragTowerTypeId = null;
-  dragTrapTypeId = null;
+  dragDefenseTypeId = null;
+  dragSpellScrollTypeId = null;
   dragPointer = null;
   isDragging = false;
   updateUI();
 };
 
-const getTrapCooldown = (trapId: string) => gameState.trapCooldowns[trapId] ?? 0;
+const getSpellScrollCooldown = (spellScrollId: string) => gameState.spellScrollCooldowns[spellScrollId] ?? 0;
 
-const setTrapCooldown = (trapId: string, value: number) => {
+const setSpellScrollCooldown = (spellScrollId: string, value: number) => {
   if (value <= 0) {
-    delete gameState.trapCooldowns[trapId];
+    delete gameState.spellScrollCooldowns[spellScrollId];
     return;
   }
-  gameState.trapCooldowns[trapId] = value;
+  gameState.spellScrollCooldowns[spellScrollId] = value;
 };
 
-const resetPerWaveTrapCooldowns = () => {
-  for (const trap of trapTypes) {
-    if (!trap.cooldownPerWave) continue;
-    delete gameState.trapCooldowns[trap.id];
+const resetPerWaveSpellScrollCooldowns = () => {
+  for (const spellScroll of spellScrollTypes) {
+    if (!spellScroll.cooldownPerWave) continue;
+    delete gameState.spellScrollCooldowns[spellScroll.id];
   }
 };
 
   const uiState = createUiState({
-    selectedTowerTypeId: gameState.selectedTower?.id ?? null,
-    selectedTowerPopup: null,
+    selectedDefenseTypeId: gameState.selectedDefense?.id ?? null,
+    selectedDefensePopup: null,
     gold: gameState.gold,
-    lives: gameState.lives,
+    hp: gameState.hp,
     wave: gameState.wave,
-    enemyFactionName: getFactionForWave(gameState.wave).name,
+    foeFactionName: getFactionForWave(gameState.wave).name,
     soundEnabled: gameState.soundEnabled,
     autoWaveEnabled: gameState.autoWaveEnabled,
     showDamagePopups: gameState.showDamagePopups,
-    trapCooldowns: gameState.trapCooldowns,
+    spellScrollCooldowns: gameState.spellScrollCooldowns,
     speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
     isCountingDown: gameState.isCountingDown,
     countdownRemaining: gameState.countdownRemaining,
@@ -244,19 +255,22 @@ const resetPerWaveTrapCooldowns = () => {
 });
 let ui: ReturnType<typeof mount> | null = null;
 
-const buildSelectedTowerPopup = () => {
-  if (!selectedTowerId) return null;
-  const tower = gameState.towers.find((item) => item.id === selectedTowerId);
-  if (!tower) return null;
+const buildSelectedDefensePopup = () => {
+  if (!selectedDefenseId) return null;
+  const defense = gameState.defenses.find((item) => item.id === selectedDefenseId);
+  if (!defense) return null;
   const size = getTileSize(canvas, grid);
-  const center = tileCenter(tower.col, tower.row, size);
+  const center = tileCenter(defense.col, defense.row, size);
   const mapWidth = size * grid.cols;
-  const nextLevel = tower.level + 1;
-  const canUpgrade = tower.level < MAX_TOWER_LEVEL;
-  const upgradeCost = canUpgrade ? getTowerUpgradeCost(tower, nextLevel) : 0;
+  const nextLevel = defense.level + 1;
+  const canUpgrade = defense.level < MAX_DEFENSE_LEVEL;
+  const upgradeCost = canUpgrade ? getDefenseUpgradeCost(defense, nextLevel) : 0;
   const canAffordUpgrade = canUpgrade && canAfford(upgradeCost);
-  const statsCurrent = getTowerStatsAtLevel(tower, tower.level);
-  const statsNext = canUpgrade ? getTowerStatsAtLevel(tower, nextLevel) : null;
+  const aura = getDefenseAuraMultipliers(defense, gameState.defenses);
+  const statsCurrent = applyAuraToStats(getDefenseStatsAtLevel(defense, defense.level), aura);
+  const statsNext = canUpgrade
+    ? applyAuraToStats(getDefenseStatsAtLevel(defense, nextLevel), aura)
+    : null;
 
   let x = center.x + size * 0.55;
   if (x + UPGRADE_POPUP_WIDTH > mapWidth - UPGRADE_POPUP_PADDING) {
@@ -267,13 +281,13 @@ const buildSelectedTowerPopup = () => {
   let y = center.y - UPGRADE_POPUP_HEIGHT * 0.5;
 
   return {
-    id: tower.id,
-    typeId: tower.type.id,
-    name: tower.type.name,
-    level: tower.level,
-    maxLevel: MAX_TOWER_LEVEL,
-    targetCol: tower.targetCol,
-    targetRow: tower.targetRow,
+    id: defense.id,
+    typeId: defense.type.id,
+    name: defense.type.name,
+    level: defense.level,
+    maxLevel: MAX_DEFENSE_LEVEL,
+    targetCol: defense.targetCol,
+    targetRow: defense.targetRow,
     x,
     y,
     canUpgrade,
@@ -299,16 +313,16 @@ const buildSelectedTowerPopup = () => {
   const updateUI = () => {
     if (!ui) return;
     uiState.set({
-      selectedTowerTypeId: gameState.selectedTower?.id ?? null,
-      selectedTowerPopup: buildSelectedTowerPopup(),
+      selectedDefenseTypeId: gameState.selectedDefense?.id ?? null,
+      selectedDefensePopup: buildSelectedDefensePopup(),
       gold: gameState.gold,
-      lives: gameState.lives,
+      hp: gameState.hp,
       wave: gameState.wave,
-      enemyFactionName: getFactionForWave(gameState.wave).name,
+      foeFactionName: getFactionForWave(gameState.wave).name,
       soundEnabled: gameState.soundEnabled,
       autoWaveEnabled: gameState.autoWaveEnabled,
       showDamagePopups: gameState.showDamagePopups,
-      trapCooldowns: gameState.trapCooldowns,
+      spellScrollCooldowns: gameState.spellScrollCooldowns,
       speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
       isCountingDown: gameState.isCountingDown,
       countdownRemaining: gameState.countdownRemaining,
@@ -322,12 +336,12 @@ const buildSelectedTowerPopup = () => {
 const resetGame = () => {
   gameState = createInitialState();
   isDefeated = false;
-  selectedTowerId = null;
-  recentTowerId = null;
+  selectedDefenseId = null;
+  recentDefenseId = null;
   recentRemainingSeconds = 0;
-  pendingTargetTowerId = null;
+  pendingTargetDefenseId = null;
   wasWaveActive = false;
-  setSelectedTower(towerTypes[0].id);
+  setSelectedDefense(defenseTypes[0].id);
   markStateDirty();
   updateUI();
 };
@@ -345,10 +359,10 @@ const initUi = () => {
     target: uiRoot,
     props: {
       uiState,
-      towerTypes,
-      towerSprites,
-      trapTypes,
-      trapSprites,
+      defenseTypes,
+      defenseSprites,
+      spellScrollTypes,
+      spellScrollSprites,
       onStartWave: () => {
         audio.unlock();
         startWave();
@@ -381,52 +395,52 @@ const initUi = () => {
         speedIndex = (speedIndex + 1) % GAME_CONFIG.gameplay.speedSteps.length;
         updateUI();
       },
-      onSelectTower: (towerId: string | null) => {
-        setSelectedTower(towerId);
+      onSelectDefense: (defenseId: string | null) => {
+        setSelectedDefense(defenseId);
         updateUI();
       },
-      onStartDragTower: (towerId: string) => {
-        startTowerDrag(towerId);
+      onStartDragDefense: (defenseId: string) => {
+        startDefenseDrag(defenseId);
         updateUI();
       },
-      onStartDragTrap: (trapId: string) => {
-        if (getTrapCooldown(trapId) > 0) return;
-        startTrapDrag(trapId);
+      onStartDragSpellScroll: (spellScrollId: string) => {
+        if (getSpellScrollCooldown(spellScrollId) > 0) return;
+        startSpellScrollDrag(spellScrollId);
         updateUI();
       },
-      onUpgradeTower: (towerId: string) => {
-        const tower = gameState.towers.find((item) => item.id === towerId);
-        if (!tower) return;
-        if (tower.level >= MAX_TOWER_LEVEL) return;
-        const nextLevel = tower.level + 1;
-        const upgradeCost = getTowerUpgradeCost(tower, nextLevel);
+      onUpgradeDefense: (defenseId: string) => {
+        const defense = gameState.defenses.find((item) => item.id === defenseId);
+        if (!defense) return;
+        if (defense.level >= MAX_DEFENSE_LEVEL) return;
+        const nextLevel = defense.level + 1;
+        const upgradeCost = getDefenseUpgradeCost(defense, nextLevel);
         if (!canAfford(upgradeCost)) return;
         if (!(isDevEnabled() && getDevConfig().infiniteGold)) {
           gameState.gold -= upgradeCost;
         }
-        tower.level = nextLevel;
+        defense.level = nextLevel;
         markStateDirty();
         updateUI();
       },
-      onDeleteTower: (towerId: string) => {
-        const index = gameState.towers.findIndex((item) => item.id === towerId);
+      onDeleteDefense: (defenseId: string) => {
+        const index = gameState.defenses.findIndex((item) => item.id === defenseId);
         if (index === -1) return;
-        gameState.towers.splice(index, 1);
-        if (selectedTowerId === towerId) {
-          selectedTowerId = null;
+        gameState.defenses.splice(index, 1);
+        if (selectedDefenseId === defenseId) {
+          selectedDefenseId = null;
         }
-        if (pendingTargetTowerId === towerId) {
-          pendingTargetTowerId = null;
+        if (pendingTargetDefenseId === defenseId) {
+          pendingTargetDefenseId = null;
         }
         markStateDirty();
         updateUI();
       },
-      onSetTowerTarget: (towerId: string) => {
-        pendingTargetTowerId = towerId;
+      onSetDefenseTarget: (defenseId: string) => {
+        pendingTargetDefenseId = defenseId;
         dragPointer = lastPointer;
       },
-      onCloseTowerPopup: () => {
-        selectedTowerId = null;
+      onCloseDefensePopup: () => {
+        selectedDefenseId = null;
         updateUI();
       },
       onDefeatReset: () => {
@@ -444,97 +458,98 @@ const handlePointer = (event: PointerEvent) => {
   const y = event.clientY - rect.top;
   const { col, row } = screenToGrid(x, y, size);
   if (col < 0 || row < 0 || col >= grid.cols || row >= grid.rows) {
-    pendingTargetTowerId = null;
+    pendingTargetDefenseId = null;
     return;
   }
-  if (pendingTargetTowerId) {
-    const tower = gameState.towers.find((item) => item.id === pendingTargetTowerId);
-    if (tower) {
-      const center = tileCenter(tower.col, tower.row, size);
+  if (pendingTargetDefenseId) {
+    const defense = gameState.defenses.find((item) => item.id === pendingTargetDefenseId);
+    if (defense) {
+      const center = tileCenter(defense.col, defense.row, size);
       const targetCenter = tileCenter(col, row, size);
       const dist = Math.hypot(targetCenter.x - center.x, targetCenter.y - center.y);
-      const range = getTowerStatsAtLevel(tower, tower.level).range * size;
+      const range = getDefenseStatsAtLevel(defense, defense.level).range * size;
       if (dist <= range) {
-        tower.targetCol = col;
-        tower.targetRow = row;
+        defense.targetCol = col;
+        defense.targetRow = row;
         markStateDirty();
         updateUI();
       }
     }
-    pendingTargetTowerId = null;
+    pendingTargetDefenseId = null;
     dragPointer = null;
     return;
   }
-  const towerAtTile = gameState.towers.find((tower) => tower.col === col && tower.row === row);
-  if (towerAtTile) {
-    selectedTowerId = towerAtTile.id;
+  const defenseAtTile = gameState.defenses.find((defense) => defense.col === col && defense.row === row);
+  if (defenseAtTile) {
+    selectedDefenseId = defenseAtTile.id;
     return;
   }
-  selectedTowerId = null;
+  selectedDefenseId = null;
 };
 
 const loadSavedGame = () => {
   const data = loadGame();
   if (!data) {
-    setSelectedTower(towerTypes[0].id);
+    setSelectedDefense(defenseTypes[0].id);
     updateUI();
     return;
   }
   gameState.gold = data.gold ?? gameState.gold;
-  gameState.lives = data.lives ?? gameState.lives;
-  gameState.lives = Math.min(gameState.lives, gameState.maxLives);
+  gameState.hp = data.hp ?? gameState.hp;
+  gameState.hp = Math.min(gameState.hp, gameState.maxHp);
   gameState.wave = data.wave ?? gameState.wave;
   gameState.isCountingDown = data.isCountingDown ?? gameState.isCountingDown;
   gameState.countdownRemaining = data.countdownRemaining ?? gameState.countdownRemaining;
   gameState.soundEnabled = data.soundEnabled ?? gameState.soundEnabled;
   gameState.autoWaveEnabled = data.autoWaveEnabled ?? gameState.autoWaveEnabled;
   gameState.showDamagePopups = data.showDamagePopups ?? gameState.showDamagePopups;
-  gameState.trapCooldowns = {};
-  if (data.trapCooldowns) {
-    for (const [trapId, remaining] of Object.entries(data.trapCooldowns)) {
-      gameState.trapCooldowns[trapId] = remaining < 0 ? Number.POSITIVE_INFINITY : remaining;
+  gameState.spellScrollCooldowns = {};
+  if (data.spellScrollCooldowns) {
+    for (const [spellScrollId, remaining] of Object.entries(data.spellScrollCooldowns)) {
+      gameState.spellScrollCooldowns[spellScrollId] = remaining < 0 ? Number.POSITIVE_INFINITY : remaining;
     }
   }
-  gameState.traps = Array.isArray(data.traps)
-    ? data.traps
-        .map((trap) => {
-          const type = trapTypes.find((candidate) => candidate.id === trap.typeId);
+  gameState.spellScrolls = Array.isArray(data.spellScrolls)
+    ? data.spellScrolls
+        .map((spellScroll) => {
+          const type = spellScrollTypes.find((candidate) => candidate.id === spellScroll.typeId);
           if (!type) return null;
           return {
             id: crypto.randomUUID(),
-            col: trap.col,
-            row: trap.row,
+            col: spellScroll.col,
+            row: spellScroll.row,
             type,
-            triggersRemaining: trap.triggersRemaining ?? type.maxTriggers,
+            triggersRemaining: spellScroll.triggersRemaining ?? type.maxTriggers,
           };
         })
-        .filter((trap): trap is NonNullable<typeof trap> => Boolean(trap))
+        .filter((spellScroll): spellScroll is NonNullable<typeof spellScroll> => Boolean(spellScroll))
     : [];
-  gameState.towers = Array.isArray(data.towers)
-    ? data.towers
-        .map((tower) => {
-          const type = towerTypes.find((candidate) => candidate.id === tower.typeId);
+  gameState.defenses = Array.isArray(data.defenses)
+    ? data.defenses
+        .map((defense) => {
+          const resolvedId = normalizeDefenseId(defense.typeId);
+          const type = defenseTypes.find((candidate) => candidate.id === resolvedId);
           if (!type) return null;
           return {
             id: crypto.randomUUID(),
-            col: tower.col,
-            row: tower.row,
+            col: defense.col,
+            row: defense.row,
             type,
-            cooldown: tower.cooldown ?? 0,
+            cooldown: defense.cooldown ?? 0,
             rangeBonus:
-              type.types.includes("Ranged") && isTreeTile(tower.col, tower.row, pathTiles)
+              type.types.includes("Ranged") && isTreeTile(defense.col, defense.row, pathTiles)
                 ? RANGED_TREE_RANGE_BONUS
                 : 0,
             damageBonus:
-              type.id === TOWER_IDS.archer && isTreeTile(tower.col, tower.row, pathTiles)
-                ? GAME_CONFIG.gameplay.archerTreeDamageBonus
+              type.id === DEFENSE_IDS.ranger && isTreeTile(defense.col, defense.row, pathTiles)
+                ? GAME_CONFIG.gameplay.rangerTreeDamageBonus
                 : 0,
-            level: clampTowerLevel(tower.level ?? 0),
-            targetCol: tower.targetCol,
-            targetRow: tower.targetRow,
+            level: clampDefenseLevel(defense.level ?? 0),
+            targetCol: defense.targetCol,
+            targetRow: defense.targetRow,
           };
         })
-        .filter((tower): tower is NonNullable<typeof tower> => Boolean(tower))
+        .filter((defense): defense is NonNullable<typeof defense> => Boolean(defense))
     : [];
   gameState.waves = Array.isArray(data.waves)
     ? data.waves.map((wave) => ({
@@ -545,47 +560,47 @@ const loadSavedGame = () => {
         totalSpawns: wave.totalSpawns,
         remainingEnemies: wave.remainingEnemies,
         bossSpawned: wave.bossSpawned,
-        livesLost: wave.livesLost,
+        hpLost: wave.hpLost,
       }))
     : [];
-  gameState.enemies = Array.isArray(data.enemies)
-    ? data.enemies.map((enemy) => {
-        const isBoss = enemy.isBoss || enemy.type === "boss";
-        const typeStats = isBoss ? null : GAME_CONFIG.enemy.types[enemy.type];
+  gameState.foes = Array.isArray(data.foes)
+    ? data.foes.map((foe) => {
+        const isBoss = foe.isBoss || foe.type === "boss";
+        const typeStats = isBoss ? null : GAME_CONFIG.foe.types[foe.type];
         return {
-          id: enemy.id,
-          hp: enemy.hp,
-          maxHp: enemy.maxHp,
-          speed: enemy.speed,
-          waveId: enemy.waveId,
-          faction: enemy.faction,
-          type: enemy.type,
-          targetIndex: enemy.targetIndex,
-          isBoss: enemy.isBoss,
-          sizeScale: enemy.sizeScale,
-          x: enemy.x,
-          y: enemy.y,
-          vx: enemy.vx,
-          vy: enemy.vy,
-          knockbackRemaining: enemy.knockbackRemaining,
-          knockbackResistRemaining: enemy.knockbackResistRemaining,
-          slowRemaining: enemy.slowRemaining,
-          slowMultiplier: enemy.slowMultiplier,
-          lastTrapTile: enemy.lastTrapTile,
+          id: foe.id,
+          hp: foe.hp,
+          maxHp: foe.maxHp,
+          speed: foe.speed,
+          waveId: foe.waveId,
+          faction: foe.faction,
+          type: foe.type,
+          targetIndex: foe.targetIndex,
+          isBoss: foe.isBoss,
+          sizeScale: foe.sizeScale,
+          x: foe.x,
+          y: foe.y,
+          vx: foe.vx,
+          vy: foe.vy,
+          knockbackRemaining: foe.knockbackRemaining,
+          knockbackResistRemaining: foe.knockbackResistRemaining,
+          slowRemaining: foe.slowRemaining,
+          slowMultiplier: foe.slowMultiplier,
+          lastSpellScrollTile: foe.lastSpellScrollTile,
           damageResistances: isBoss
-            ? GAME_CONFIG.enemy.bossDamageResistances
+            ? GAME_CONFIG.foe.bossDamageResistances
             : typeStats?.damageResistances,
           damageGroupResistances: isBoss
-            ? GAME_CONFIG.enemy.bossDamageGroupResistances
+            ? GAME_CONFIG.foe.bossDamageGroupResistances
             : typeStats?.damageGroupResistances,
         };
       })
     : [];
   wasWaveActive = gameState.waves.length > 0 || gameState.isCountingDown;
 
-  const preferredId = data.selectedTowerId ?? towerTypes[0].id;
-  const selectedId = towerTypes.some((tower) => tower.id === preferredId) ? preferredId : towerTypes[0].id;
-  setSelectedTower(selectedId);
+  const preferredId = normalizeDefenseId(data.selectedDefenseId ?? defenseTypes[0].id);
+  const selectedId = defenseTypes.some((defense) => defense.id === preferredId) ? preferredId : defenseTypes[0].id;
+  setSelectedDefense(selectedId);
   updateUI();
 };
 
@@ -600,20 +615,20 @@ const loop = (timestamp: number) => {
   const size = getTileSize(canvas, grid);
   let targetIndicator: { x: number; y: number; alpha?: number } | undefined;
   let highlightAlpha = 0;
-  let highlightTowerId: string | null = null;
-  if (selectedTowerId) {
-    highlightTowerId = selectedTowerId;
+  let highlightDefenseId: string | null = null;
+  if (selectedDefenseId) {
+    highlightDefenseId = selectedDefenseId;
     highlightAlpha = 1;
-  } else if (recentTowerId) {
+  } else if (recentDefenseId) {
     recentRemainingSeconds = Math.max(recentRemainingSeconds - scaledDt, 0);
     highlightAlpha = Math.min(recentRemainingSeconds / RANGE_DISPLAY_DURATION, 1);
-    highlightTowerId = recentTowerId;
+    highlightDefenseId = recentDefenseId;
     if (recentRemainingSeconds === 0) {
-      recentTowerId = null;
+      recentDefenseId = null;
     }
   }
   const dragPreview =
-    dragPointer && dragTowerTypeId
+    dragPointer && dragDefenseTypeId
       ? (() => {
           const rect = canvas.getBoundingClientRect();
           const localX = dragPointer.x - rect.left;
@@ -621,23 +636,23 @@ const loop = (timestamp: number) => {
           if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
             return null;
           }
-          const tower = towerTypes.find((item) => item.id === dragTowerTypeId);
-          if (!tower) return null;
+          const defense = defenseTypes.find((item) => item.id === dragDefenseTypeId);
+          if (!defense) return null;
           const { col, row } = screenToGrid(localX, localY, size);
           const rangeBonus =
-            tower.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? RANGED_TREE_RANGE_BONUS : 0;
+            defense.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? RANGED_TREE_RANGE_BONUS : 0;
           return {
             x: localX,
             y: localY,
-            range: tower.range + rangeBonus,
-            color: tower.color,
-            spriteId: tower.id,
+            range: defense.range + rangeBonus,
+            color: defense.color,
+            spriteId: defense.id,
           };
         })()
       : null;
 
-  const trapPreview =
-    dragPointer && dragTrapTypeId
+  const spellScrollPreview =
+    dragPointer && dragSpellScrollTypeId
       ? (() => {
           const rect = canvas.getBoundingClientRect();
           const localX = dragPointer.x - rect.left;
@@ -645,22 +660,22 @@ const loop = (timestamp: number) => {
           if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
             return null;
           }
-          const trap = trapTypes.find((item) => item.id === dragTrapTypeId);
-          if (!trap) return null;
+          const spellScroll = spellScrollTypes.find((item) => item.id === dragSpellScrollTypeId);
+          if (!spellScroll) return null;
           const radius =
-            trap.killsAll ? Math.hypot(grid.cols, grid.rows) : trap.splashRadiusTiles ?? undefined;
+            spellScroll.killsAll ? Math.hypot(grid.cols, grid.rows) : spellScroll.splashRadiusTiles ?? undefined;
           return {
             x: localX,
             y: localY,
             radius,
-            spriteId: trap.id,
+            spriteId: spellScroll.id,
           };
         })()
       : null;
 
-  if (pendingTargetTowerId) {
-    const tower = gameState.towers.find((item) => item.id === pendingTargetTowerId);
-    if (tower && dragPointer) {
+  if (pendingTargetDefenseId) {
+    const defense = gameState.defenses.find((item) => item.id === pendingTargetDefenseId);
+    if (defense && dragPointer) {
       const rect = canvas.getBoundingClientRect();
       const localX = dragPointer.x - rect.left;
       const localY = dragPointer.y - rect.top;
@@ -672,17 +687,17 @@ const loop = (timestamp: number) => {
         }
       }
     }
-  } else if (selectedTowerId) {
-    const tower = gameState.towers.find((item) => item.id === selectedTowerId);
-    if (tower && tower.type.id === TOWER_IDS.catapult) {
-      if (tower.targetCol !== undefined && tower.targetRow !== undefined) {
-        const targetCenter = tileCenter(tower.targetCol, tower.targetRow, size);
+  } else if (selectedDefenseId) {
+    const defense = gameState.defenses.find((item) => item.id === selectedDefenseId);
+    if (defense && defense.type.id === DEFENSE_IDS.siegeEngine) {
+      if (defense.targetCol !== undefined && defense.targetRow !== undefined) {
+        const targetCenter = tileCenter(defense.targetCol, defense.targetRow, size);
         targetIndicator = { x: targetCenter.x, y: targetCenter.y, alpha: 0.75 };
       }
     }
   }
 
-  if (gameState.lives <= 0) {
+  if (gameState.hp <= 0) {
     if (!isDefeated) {
       isDefeated = true;
       markStateDirty();
@@ -691,16 +706,16 @@ const loop = (timestamp: number) => {
       size,
       cols: grid.cols,
       rows: grid.rows,
-      towers: gameState.towers,
-      traps: gameState.traps,
-      enemies: gameState.enemies,
+      defenses: gameState.defenses,
+      spellScrolls: gameState.spellScrolls,
+      foes: gameState.foes,
       projectiles: gameState.projectiles,
       effects: gameState.effects,
       damagePopups: gameState.damagePopups,
-      highlightedTowerId: highlightTowerId,
+      highlightedDefenseId: highlightDefenseId,
       highlightAlpha,
       dragPreview: dragPreview ?? undefined,
-      trapPreview: trapPreview ?? undefined,
+      spellScrollPreview: spellScrollPreview ?? undefined,
       targetIndicator,
     });
     updateUI();
@@ -713,36 +728,36 @@ const loop = (timestamp: number) => {
   }
 
   updateCountdown(gameState, scaledDt);
-  for (const [trapId, remaining] of Object.entries(gameState.trapCooldowns)) {
+  for (const [spellScrollId, remaining] of Object.entries(gameState.spellScrollCooldowns)) {
     if (!Number.isFinite(remaining)) continue;
     const next = Math.max(0, remaining - scaledDt);
-    setTrapCooldown(trapId, next);
+    setSpellScrollCooldown(spellScrollId, next);
   }
   updateWaves(
     gameState,
     scaledDt,
-    (wave) => spawnEnemy(gameState, wave),
-    (wave) => spawnBossEnemy(gameState, wave),
+    (wave) => spawnFoe(gameState, wave),
+    (wave) => spawnBossFoe(gameState, wave),
     isBossWave,
     markStateDirty,
   );
   const isWaveActive = gameState.waves.length > 0 || gameState.isCountingDown;
   if (wasWaveActive && !isWaveActive) {
-    resetPerWaveTrapCooldowns();
+    resetPerWaveSpellScrollCooldowns();
   }
   wasWaveActive = isWaveActive;
   if (gameState.autoWaveEnabled && !gameState.isCountingDown && gameState.waves.length === 0) {
     startWave();
   }
-  updateEnemies(gameState, scaledDt, size, markStateDirty);
-  updateTraps(gameState, scaledDt, size, grid.cols, grid.rows, markStateDirty, (trapId) =>
-    audio.playTrapSound(trapId, gameState.soundEnabled),
+  updateFoes(gameState, scaledDt, size, markStateDirty);
+  updateSpellScrolls(gameState, scaledDt, size, grid.cols, grid.rows, markStateDirty, (spellScrollId) =>
+    audio.playSpellScrollSound(spellScrollId, gameState.soundEnabled),
   );
-  updateTowers(gameState, scaledDt, size);
+  updateDefenses(gameState, scaledDt, size);
   updateProjectiles(
     gameState,
     scaledDt,
-    (towerTypeId) => audio.playDamageSound(towerTypeId, gameState.soundEnabled),
+    (defenseTypeId) => audio.playDamageSound(defenseTypeId, gameState.soundEnabled),
     gameState.showDamagePopups,
   );
   for (let i = gameState.effects.length - 1; i >= 0; i -= 1) {
@@ -764,16 +779,16 @@ const loop = (timestamp: number) => {
     size,
     cols: grid.cols,
     rows: grid.rows,
-    towers: gameState.towers,
-    traps: gameState.traps,
-    enemies: gameState.enemies,
+    defenses: gameState.defenses,
+    spellScrolls: gameState.spellScrolls,
+    foes: gameState.foes,
     projectiles: gameState.projectiles,
     effects: gameState.effects,
     damagePopups: gameState.damagePopups,
-    highlightedTowerId: highlightTowerId,
+    highlightedDefenseId: highlightDefenseId,
     highlightAlpha,
     dragPreview: dragPreview ?? undefined,
-    trapPreview: trapPreview ?? undefined,
+    spellScrollPreview: spellScrollPreview ?? undefined,
     targetIndicator,
   });
 
@@ -788,7 +803,7 @@ const loop = (timestamp: number) => {
 };
 
 const startApp = async () => {
-  renderer = await createPixiRenderer({ canvas, pathTiles, towerSprites, trapSprites, enemySprites });
+  renderer = await createPixiRenderer({ canvas, pathTiles, defenseSprites, spellScrollSprites, foeSprites });
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
   document.addEventListener("fullscreenchange", updateFullscreenLayout);
@@ -819,29 +834,29 @@ const startApp = async () => {
     const localY = event.clientY - rect.top;
     if (localX >= 0 && localY >= 0 && localX <= rect.width && localY <= rect.height) {
       const { col, row } = screenToGrid(localX, localY, size);
-      if (dragTowerTypeId) {
-        const tower = towerTypes.find((item) => item.id === dragTowerTypeId);
-        if (tower && canPlaceTower(col, row) && canAfford(tower.cost)) {
+      if (dragDefenseTypeId) {
+        const defense = defenseTypes.find((item) => item.id === dragDefenseTypeId);
+        if (defense && canPlaceDefense(col, row) && canAfford(defense.cost)) {
           const rangeBonus =
-            tower.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? RANGED_TREE_RANGE_BONUS : 0;
-          const placedTower = addTower(col, row, tower, rangeBonus);
+            defense.types.includes("Ranged") && isTreeTile(col, row, pathTiles) ? RANGED_TREE_RANGE_BONUS : 0;
+          const placedDefense = addDefense(col, row, defense, rangeBonus);
           if (!(isDevEnabled() && getDevConfig().infiniteGold)) {
-            gameState.gold -= tower.cost;
+            gameState.gold -= defense.cost;
           }
-          recentTowerId = placedTower.id;
+          recentDefenseId = placedDefense.id;
           recentRemainingSeconds = RANGE_DISPLAY_DURATION;
         }
-      } else if (dragTrapTypeId) {
-        const trap = trapTypes.find((item) => item.id === dragTrapTypeId);
-        if (trap && canPlaceTrap(col, row) && canAfford(trap.cost)) {
-          addTrap(col, row, trap);
-          if (trap.cooldownPerWave) {
-            setTrapCooldown(trap.id, Number.POSITIVE_INFINITY);
-          } else if (trap.cooldownSeconds) {
-            setTrapCooldown(trap.id, trap.cooldownSeconds);
+      } else if (dragSpellScrollTypeId) {
+        const spellScroll = spellScrollTypes.find((item) => item.id === dragSpellScrollTypeId);
+        if (spellScroll && canPlaceSpellScroll(col, row) && canAfford(spellScroll.cost)) {
+          addSpellScroll(col, row, spellScroll);
+          if (spellScroll.cooldownPerWave) {
+            setSpellScrollCooldown(spellScroll.id, Number.POSITIVE_INFINITY);
+          } else if (spellScroll.cooldownSeconds) {
+            setSpellScrollCooldown(spellScroll.id, spellScroll.cooldownSeconds);
           }
           if (!(isDevEnabled() && getDevConfig().infiniteGold)) {
-            gameState.gold -= trap.cost;
+            gameState.gold -= spellScroll.cost;
           }
         }
       }

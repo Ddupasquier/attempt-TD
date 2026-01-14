@@ -9,9 +9,9 @@ const startNewWave = (state: GameState) => {
     spawnTimer: GAME_CONFIG.wave.initialSpawnDelay,
     spawnIndex: 0,
     totalSpawns: GAME_CONFIG.wave.baseSpawns + waveNumber * GAME_CONFIG.wave.spawnsPerWave,
-    remainingEnemies: 0,
+    remainingFoes: 0,
     bossSpawned: false,
-    livesLost: false,
+    hpLost: false,
   };
   state.waves.push(wave);
   state.wave += 1;
@@ -30,29 +30,29 @@ const updateCountdown = (state: GameState, dt: number) => {
 const updateWaves = (
   state: GameState,
   dt: number,
-  spawnEnemy: (wave: WaveState) => void,
-  spawnBossEnemy: (wave: WaveState) => void,
+  spawnFoe: (wave: WaveState) => void,
+  spawnBossFoe: (wave: WaveState) => void,
   isBossWave: (waveNumber: number) => boolean,
   onWaveComplete: () => void,
 ) => {
   for (let i = state.waves.length - 1; i >= 0; i -= 1) {
     const wave = state.waves[i];
     if (!wave.bossSpawned && isBossWave(wave.waveNumber)) {
-      spawnBossEnemy(wave);
+      spawnBossFoe(wave);
       wave.bossSpawned = true;
     }
     wave.spawnTimer -= dt;
     if (wave.spawnTimer <= 0 && wave.spawnIndex < wave.totalSpawns) {
-      spawnEnemy(wave);
+      spawnFoe(wave);
       wave.spawnIndex += 1;
       wave.spawnTimer = GAME_CONFIG.wave.spawnInterval;
     }
-    if (wave.spawnIndex >= wave.totalSpawns && wave.remainingEnemies <= 0) {
-      if (!wave.livesLost) {
-        const lifeGain = isBossWave(wave.waveNumber)
-          ? GAME_CONFIG.gameplay.bossFlawlessLifeGain
-          : GAME_CONFIG.gameplay.flawlessLifeGain;
-        state.lives = Math.min(state.maxLives, state.lives + lifeGain);
+    if (wave.spawnIndex >= wave.totalSpawns && wave.remainingFoes <= 0) {
+      if (!wave.hpLost) {
+        const hpGain = isBossWave(wave.waveNumber)
+          ? GAME_CONFIG.gameplay.bossFlawlessHpGain
+          : GAME_CONFIG.gameplay.flawlessHpGain;
+        state.hp = Math.min(state.maxHp, state.hp + hpGain);
       }
       state.waves.splice(i, 1);
       state.gold += GAME_CONFIG.wave.waveReward;

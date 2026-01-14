@@ -3,28 +3,28 @@
   import DefeatModal from "./components/DefeatModal.svelte";
   import HudOverlay from "./components/HudOverlay.svelte";
   import ResetConfirmModal from "./components/ResetConfirmModal.svelte";
-  import TowerUpgradePopup from "./components/TowerUpgradePopup.svelte";
+  import DefenseUpgradePopup from "./components/DefenseUpgradePopup.svelte";
   import type { UiRootProps } from "../types/ui/UiRoot.types";
 
   const {
     uiState,
-    towerTypes,
-    towerSprites,
-    trapTypes,
-    trapSprites,
+    defenseTypes,
+    defenseSprites,
+    spellScrollTypes,
+    spellScrollSprites,
     onStartWave,
     onResetGame,
     onToggleSound,
     onToggleAutoWave,
     onToggleDamagePopups,
     onToggleSpeed,
-    onSelectTower,
-    onStartDragTower,
-    onStartDragTrap,
-    onUpgradeTower,
-    onDeleteTower,
-    onSetTowerTarget,
-    onCloseTowerPopup,
+    onSelectDefense,
+    onStartDragDefense,
+    onStartDragSpellScroll,
+    onUpgradeDefense,
+    onDeleteDefense,
+    onSetDefenseTarget,
+    onCloseDefensePopup,
     onDefeatReset,
   } = $props<UiRootProps>();
 
@@ -65,31 +65,31 @@
     onToggleSpeed={onToggleSpeed}
   />
   <HudOverlay
-    {towerTypes}
-    {towerSprites}
-    {trapTypes}
-    {trapSprites}
-    trapCooldowns={$uiState.trapCooldowns}
-    selectedTowerTypeId={$uiState.selectedTowerTypeId}
+    {defenseTypes}
+    {defenseSprites}
+    {spellScrollTypes}
+    {spellScrollSprites}
+    spellScrollCooldowns={$uiState.spellScrollCooldowns}
+    selectedDefenseTypeId={$uiState.selectedDefenseTypeId}
     gold={$uiState.gold}
-    lives={$uiState.lives}
+    hp={$uiState.hp}
     wave={$uiState.wave}
-    enemyFactionName={$uiState.enemyFactionName}
+    foeFactionName={$uiState.foeFactionName}
     isCollapsed={isHudCollapsed}
     onToggle={handleToggleHud}
-    onSelectTower={onSelectTower}
-    onStartDragTower={onStartDragTower}
-    onStartDragTrap={onStartDragTrap}
+    onSelectDefense={onSelectDefense}
+    onStartDragDefense={onStartDragDefense}
+    onStartDragSpellScroll={onStartDragSpellScroll}
   />
-  {#if $uiState.selectedTowerPopup}
-    <TowerUpgradePopup
-      popup={$uiState.selectedTowerPopup}
+  {#if $uiState.selectedDefensePopup}
+    <DefenseUpgradePopup
+      popup={$uiState.selectedDefensePopup}
       boundsWidth={$uiState.mapWidth}
       boundsHeight={$uiState.mapHeight}
-      onUpgrade={onUpgradeTower}
-      onDelete={onDeleteTower}
-      onSetTarget={onSetTowerTarget}
-      onClose={onCloseTowerPopup}
+      onUpgrade={onUpgradeDefense}
+      onDelete={onDeleteDefense}
+      onSetTarget={onSetDefenseTarget}
+      onClose={onCloseDefensePopup}
     />
   {/if}
   <ResetConfirmModal

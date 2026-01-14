@@ -1,4 +1,4 @@
-const TRAP_IDS = {
+const SPELL_SCROLL_IDS = {
   tacks: "tacks",
   bomb: "bomb",
   glue: "glue",
@@ -7,4 +7,4 @@ const TRAP_IDS = {
   nuke: "nuke",
 } as const;
 
-export { TRAP_IDS };
+export { SPELL_SCROLL_IDS };

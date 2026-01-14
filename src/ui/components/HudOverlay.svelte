@@ -9,6 +9,7 @@
     towerSprites,
     trapTypes,
     trapSprites,
+    trapCooldowns,
     selectedTowerTypeId,
     gold,
     lives,
@@ -60,6 +61,7 @@
             trap={trap}
             sprite={trapSprites[trap.id]}
             isActive={selectedTrapTypeId === trap.id}
+            cooldownRemaining={trapCooldowns[trap.id]}
             onSelect={handleSelectTrap}
             onStartDrag={onStartDragTrap}
           />

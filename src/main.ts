@@ -67,6 +67,7 @@ let speedIndex = 0;
 let pendingTargetTowerId: string | null = null;
 let currentMapWidth = 0;
 let currentMapHeight = 0;
+let wasWaveActive = false;
 
 const RANGE_DISPLAY_DURATION = 2.5;
 const UPGRADE_POPUP_WIDTH = 190;
@@ -162,7 +163,6 @@ const addTrap = (col: number, row: number, type: TrapType) => {
     col,
     row,
     type,
-    remaining: type.duration,
     triggersRemaining: type.maxTriggers,
   };
   gameState.traps.push(trap);
@@ -206,21 +206,39 @@ const stopDrag = () => {
   updateUI();
 };
 
-const uiState = createUiState({
-  selectedTowerTypeId: gameState.selectedTower?.id ?? null,
-  selectedTowerPopup: null,
-  gold: gameState.gold,
-  lives: gameState.lives,
-  wave: gameState.wave,
-  enemyFactionName: getFactionForWave(gameState.wave).name,
-  soundEnabled: gameState.soundEnabled,
-  autoWaveEnabled: gameState.autoWaveEnabled,
-  showDamagePopups: gameState.showDamagePopups,
-  speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
-  isCountingDown: gameState.isCountingDown,
-  countdownRemaining: gameState.countdownRemaining,
-  showDefeat: false,
-  isDragging: false,
+const getTrapCooldown = (trapId: string) => gameState.trapCooldowns[trapId] ?? 0;
+
+const setTrapCooldown = (trapId: string, value: number) => {
+  if (value <= 0) {
+    delete gameState.trapCooldowns[trapId];
+    return;
+  }
+  gameState.trapCooldowns[trapId] = value;
+};
+
+const resetPerWaveTrapCooldowns = () => {
+  for (const trap of trapTypes) {
+    if (!trap.cooldownPerWave) continue;
+    delete gameState.trapCooldowns[trap.id];
+  }
+};
+
+  const uiState = createUiState({
+    selectedTowerTypeId: gameState.selectedTower?.id ?? null,
+    selectedTowerPopup: null,
+    gold: gameState.gold,
+    lives: gameState.lives,
+    wave: gameState.wave,
+    enemyFactionName: getFactionForWave(gameState.wave).name,
+    soundEnabled: gameState.soundEnabled,
+    autoWaveEnabled: gameState.autoWaveEnabled,
+    showDamagePopups: gameState.showDamagePopups,
+    trapCooldowns: gameState.trapCooldowns,
+    speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
+    isCountingDown: gameState.isCountingDown,
+    countdownRemaining: gameState.countdownRemaining,
+    showDefeat: false,
+    isDragging: false,
   mapWidth: currentMapWidth,
   mapHeight: currentMapHeight,
 });
@@ -278,27 +296,28 @@ const buildSelectedTowerPopup = () => {
   };
 };
 
-const updateUI = () => {
-  if (!ui) return;
-  uiState.set({
-    selectedTowerTypeId: gameState.selectedTower?.id ?? null,
-    selectedTowerPopup: buildSelectedTowerPopup(),
-    gold: gameState.gold,
-    lives: gameState.lives,
-    wave: gameState.wave,
-    enemyFactionName: getFactionForWave(gameState.wave).name,
-    soundEnabled: gameState.soundEnabled,
-    autoWaveEnabled: gameState.autoWaveEnabled,
-    showDamagePopups: gameState.showDamagePopups,
-    speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
-    isCountingDown: gameState.isCountingDown,
-    countdownRemaining: gameState.countdownRemaining,
-    showDefeat: isDefeated,
-    isDragging,
-    mapWidth: currentMapWidth,
-    mapHeight: currentMapHeight,
-  });
-};
+  const updateUI = () => {
+    if (!ui) return;
+    uiState.set({
+      selectedTowerTypeId: gameState.selectedTower?.id ?? null,
+      selectedTowerPopup: buildSelectedTowerPopup(),
+      gold: gameState.gold,
+      lives: gameState.lives,
+      wave: gameState.wave,
+      enemyFactionName: getFactionForWave(gameState.wave).name,
+      soundEnabled: gameState.soundEnabled,
+      autoWaveEnabled: gameState.autoWaveEnabled,
+      showDamagePopups: gameState.showDamagePopups,
+      trapCooldowns: gameState.trapCooldowns,
+      speedMultiplier: GAME_CONFIG.gameplay.speedSteps[speedIndex],
+      isCountingDown: gameState.isCountingDown,
+      countdownRemaining: gameState.countdownRemaining,
+      showDefeat: isDefeated,
+      isDragging,
+      mapWidth: currentMapWidth,
+      mapHeight: currentMapHeight,
+    });
+  };
 
 const resetGame = () => {
   gameState = createInitialState();
@@ -307,6 +326,7 @@ const resetGame = () => {
   recentTowerId = null;
   recentRemainingSeconds = 0;
   pendingTargetTowerId = null;
+  wasWaveActive = false;
   setSelectedTower(towerTypes[0].id);
   markStateDirty();
   updateUI();
@@ -370,6 +390,7 @@ const initUi = () => {
         updateUI();
       },
       onStartDragTrap: (trapId: string) => {
+        if (getTrapCooldown(trapId) > 0) return;
         startTrapDrag(trapId);
         updateUI();
       },
@@ -463,9 +484,17 @@ const loadSavedGame = () => {
   gameState.lives = data.lives ?? gameState.lives;
   gameState.lives = Math.min(gameState.lives, gameState.maxLives);
   gameState.wave = data.wave ?? gameState.wave;
+  gameState.isCountingDown = data.isCountingDown ?? gameState.isCountingDown;
+  gameState.countdownRemaining = data.countdownRemaining ?? gameState.countdownRemaining;
   gameState.soundEnabled = data.soundEnabled ?? gameState.soundEnabled;
   gameState.autoWaveEnabled = data.autoWaveEnabled ?? gameState.autoWaveEnabled;
   gameState.showDamagePopups = data.showDamagePopups ?? gameState.showDamagePopups;
+  gameState.trapCooldowns = {};
+  if (data.trapCooldowns) {
+    for (const [trapId, remaining] of Object.entries(data.trapCooldowns)) {
+      gameState.trapCooldowns[trapId] = remaining < 0 ? Number.POSITIVE_INFINITY : remaining;
+    }
+  }
   gameState.traps = Array.isArray(data.traps)
     ? data.traps
         .map((trap) => {
@@ -476,7 +505,6 @@ const loadSavedGame = () => {
             col: trap.col,
             row: trap.row,
             type,
-            remaining: trap.remaining ?? type.duration,
             triggersRemaining: trap.triggersRemaining ?? type.maxTriggers,
           };
         })
@@ -492,7 +520,7 @@ const loadSavedGame = () => {
             col: tower.col,
             row: tower.row,
             type,
-            cooldown: 0,
+            cooldown: tower.cooldown ?? 0,
             rangeBonus:
               type.types.includes("Ranged") && isTreeTile(tower.col, tower.row, pathTiles)
                 ? RANGED_TREE_RANGE_BONUS
@@ -508,6 +536,52 @@ const loadSavedGame = () => {
         })
         .filter((tower): tower is NonNullable<typeof tower> => Boolean(tower))
     : [];
+  gameState.waves = Array.isArray(data.waves)
+    ? data.waves.map((wave) => ({
+        id: wave.id,
+        waveNumber: wave.waveNumber,
+        spawnTimer: wave.spawnTimer,
+        spawnIndex: wave.spawnIndex,
+        totalSpawns: wave.totalSpawns,
+        remainingEnemies: wave.remainingEnemies,
+        bossSpawned: wave.bossSpawned,
+        livesLost: wave.livesLost,
+      }))
+    : [];
+  gameState.enemies = Array.isArray(data.enemies)
+    ? data.enemies.map((enemy) => {
+        const isBoss = enemy.isBoss || enemy.type === "boss";
+        const typeStats = isBoss ? null : GAME_CONFIG.enemy.types[enemy.type];
+        return {
+          id: enemy.id,
+          hp: enemy.hp,
+          maxHp: enemy.maxHp,
+          speed: enemy.speed,
+          waveId: enemy.waveId,
+          faction: enemy.faction,
+          type: enemy.type,
+          targetIndex: enemy.targetIndex,
+          isBoss: enemy.isBoss,
+          sizeScale: enemy.sizeScale,
+          x: enemy.x,
+          y: enemy.y,
+          vx: enemy.vx,
+          vy: enemy.vy,
+          knockbackRemaining: enemy.knockbackRemaining,
+          knockbackResistRemaining: enemy.knockbackResistRemaining,
+          slowRemaining: enemy.slowRemaining,
+          slowMultiplier: enemy.slowMultiplier,
+          lastTrapTile: enemy.lastTrapTile,
+          damageResistances: isBoss
+            ? GAME_CONFIG.enemy.bossDamageResistances
+            : typeStats?.damageResistances,
+          damageGroupResistances: isBoss
+            ? GAME_CONFIG.enemy.bossDamageGroupResistances
+            : typeStats?.damageGroupResistances,
+        };
+      })
+    : [];
+  wasWaveActive = gameState.waves.length > 0 || gameState.isCountingDown;
 
   const preferredId = data.selectedTowerId ?? towerTypes[0].id;
   const selectedId = towerTypes.some((tower) => tower.id === preferredId) ? preferredId : towerTypes[0].id;
@@ -573,10 +647,12 @@ const loop = (timestamp: number) => {
           }
           const trap = trapTypes.find((item) => item.id === dragTrapTypeId);
           if (!trap) return null;
+          const radius =
+            trap.killsAll ? Math.hypot(grid.cols, grid.rows) : trap.splashRadiusTiles ?? undefined;
           return {
             x: localX,
             y: localY,
-            radius: trap.splashRadiusTiles ?? undefined,
+            radius,
             spriteId: trap.id,
           };
         })()
@@ -637,6 +713,11 @@ const loop = (timestamp: number) => {
   }
 
   updateCountdown(gameState, scaledDt);
+  for (const [trapId, remaining] of Object.entries(gameState.trapCooldowns)) {
+    if (!Number.isFinite(remaining)) continue;
+    const next = Math.max(0, remaining - scaledDt);
+    setTrapCooldown(trapId, next);
+  }
   updateWaves(
     gameState,
     scaledDt,
@@ -645,11 +726,18 @@ const loop = (timestamp: number) => {
     isBossWave,
     markStateDirty,
   );
+  const isWaveActive = gameState.waves.length > 0 || gameState.isCountingDown;
+  if (wasWaveActive && !isWaveActive) {
+    resetPerWaveTrapCooldowns();
+  }
+  wasWaveActive = isWaveActive;
   if (gameState.autoWaveEnabled && !gameState.isCountingDown && gameState.waves.length === 0) {
     startWave();
   }
   updateEnemies(gameState, scaledDt, size, markStateDirty);
-  updateTraps(gameState, scaledDt, size, markStateDirty);
+  updateTraps(gameState, scaledDt, size, grid.cols, grid.rows, markStateDirty, (trapId) =>
+    audio.playTrapSound(trapId, gameState.soundEnabled),
+  );
   updateTowers(gameState, scaledDt, size);
   updateProjectiles(
     gameState,
@@ -747,6 +835,11 @@ const startApp = async () => {
         const trap = trapTypes.find((item) => item.id === dragTrapTypeId);
         if (trap && canPlaceTrap(col, row) && canAfford(trap.cost)) {
           addTrap(col, row, trap);
+          if (trap.cooldownPerWave) {
+            setTrapCooldown(trap.id, Number.POSITIVE_INFINITY);
+          } else if (trap.cooldownSeconds) {
+            setTrapCooldown(trap.id, trap.cooldownSeconds);
+          }
           if (!(isDevEnabled() && getDevConfig().infiniteGold)) {
             gameState.gold -= trap.cost;
           }

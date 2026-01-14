@@ -8,6 +8,7 @@ type UiState = {
   soundEnabled: boolean;
   autoWaveEnabled: boolean;
   showDamagePopups: boolean;
+  trapCooldowns: Record<string, number>;
   speedMultiplier: number;
   isCountingDown: boolean;
   countdownRemaining: number;

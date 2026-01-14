@@ -2,12 +2,14 @@
   import { spriteCanvas } from "../spriteCanvas";
   import type { TrapCardProps } from "../../types/ui/components/TrapCard.types";
 
-  const { trap, sprite, isActive, onSelect, onStartDrag } = $props<TrapCardProps>();
+  const { trap, sprite, isActive, cooldownRemaining = 0, onSelect, onStartDrag } =
+    $props<TrapCardProps>();
 
   const dragThreshold = 6;
   let suppressClick = false;
 
   const handlePointerDown = (event: PointerEvent) => {
+    if (cooldownRemaining > 0) return;
     event.preventDefault();
     event.stopPropagation();
     const startX = event.clientX;
@@ -51,6 +53,14 @@
 <button
   class="trap-card"
   class:active={isActive}
+  class:is-counting={cooldownRemaining > 0}
+  data-countdown={
+    cooldownRemaining && Number.isFinite(cooldownRemaining)
+      ? Math.ceil(cooldownRemaining)
+      : cooldownRemaining
+        ? "W"
+        : null
+  }
   type="button"
   onclick={handleClick}
   onpointerdown={handlePointerDown}

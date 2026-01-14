@@ -3,6 +3,7 @@ import { GAME_CONFIG } from "../core/config";
 import { getDevConfig, isDevEnabled } from "../core/devFlags";
 import { TOWER_IDS } from "../constants/towerIds";
 import { getCatapultDamagePopupStyle } from "../core/devFlags";
+import { applyDamageModifiers } from "../core/combat";
 
 const updateProjectiles = (
   state: GameState,
@@ -62,28 +63,54 @@ const updateProjectiles = (
     if (dist <= step) {
       if (bolt.target) {
         if (isGodMode && godMode.oneShotEnemies) {
+          const damage = bolt.target.hp;
           bolt.target.hp = 0;
+          if (bolt.target.x !== undefined && bolt.target.y !== undefined) {
+            const style = bolt.isCrit
+              ? {
+                  color: "#d60000",
+                  duration: 1.1,
+                  sizeMult: 1.4,
+                }
+              : bolt.towerTypeId === TOWER_IDS.catapult
+                ? getCatapultDamagePopupStyle()
+                : undefined;
+            pushDamagePopup(
+              bolt.target.x,
+              bolt.target.y,
+              Math.round(damage),
+              style?.color,
+              style?.duration ?? 0.6,
+              style?.sizeMult ?? 1,
+            );
+          }
         } else {
-          bolt.target.hp -= bolt.damage;
-        }
-        if (bolt.target.x !== undefined && bolt.target.y !== undefined) {
-          const style = bolt.isCrit
-            ? {
-                color: "#d60000",
-                duration: 1.1,
-                sizeMult: 1.4,
-              }
-            : bolt.towerTypeId === TOWER_IDS.catapult
-              ? getCatapultDamagePopupStyle()
-              : undefined;
-          pushDamagePopup(
-            bolt.target.x,
-            bolt.target.y,
-            Math.round(bolt.damage),
-            style?.color,
-            style?.duration ?? 0.6,
-            style?.sizeMult ?? 1,
+          const damage = applyDamageModifiers(
+            bolt.damage,
+            bolt.damageType,
+            bolt.target.damageResistances,
+            bolt.target.damageGroupResistances,
           );
+          bolt.target.hp -= damage;
+          if (bolt.target.x !== undefined && bolt.target.y !== undefined) {
+            const style = bolt.isCrit
+              ? {
+                  color: "#d60000",
+                  duration: 1.1,
+                  sizeMult: 1.4,
+                }
+              : bolt.towerTypeId === TOWER_IDS.catapult
+                ? getCatapultDamagePopupStyle()
+                : undefined;
+            pushDamagePopup(
+              bolt.target.x,
+              bolt.target.y,
+              Math.round(damage),
+              style?.color,
+              style?.duration ?? 0.6,
+              style?.sizeMult ?? 1,
+            );
+          }
         }
       } else if (bolt.splashRadius) {
         for (const enemy of state.enemies) {
@@ -93,7 +120,12 @@ const updateProjectiles = (
           const sdist = Math.hypot(sx, sy);
           if (sdist > bolt.splashRadius) continue;
           const falloff = Math.max(0, 1 - sdist / bolt.splashRadius);
-          const damage = bolt.damage * falloff;
+          const damage = applyDamageModifiers(
+            bolt.damage * falloff,
+            bolt.damageType,
+            enemy.damageResistances,
+            enemy.damageGroupResistances,
+          );
           if (isGodMode && godMode.oneShotEnemies) {
             enemy.hp = 0;
           } else {

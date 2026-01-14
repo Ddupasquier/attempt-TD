@@ -1,4 +1,5 @@
 import type { GameState, Trap } from "../types/core/types";
+import { applyDamageModifiers } from "../core/combat";
 import { tileCenter } from "../core/geometry";
 
 const applySlow = (enemy: GameState["enemies"][number], multiplier: number, duration: number) => {
@@ -6,14 +7,21 @@ const applySlow = (enemy: GameState["enemies"][number], multiplier: number, dura
   enemy.slowMultiplier = Math.min(enemy.slowMultiplier ?? 1, multiplier);
 };
 
-const updateTraps = (state: GameState, dt: number, size: number, onStateChange: () => void) => {
+const updateTraps = (
+  state: GameState,
+  dt: number,
+  size: number,
+  cols: number,
+  rows: number,
+  onStateChange: () => void,
+  playTrapSound: (trapId: string) => void,
+) => {
   const trapByKey = new Map<string, Trap>();
   let didChange = false;
 
   for (let i = state.traps.length - 1; i >= 0; i -= 1) {
     const trap = state.traps[i];
-    trap.remaining -= dt;
-    if (trap.remaining <= 0 || trap.triggersRemaining === 0) {
+    if (trap.triggersRemaining === 0) {
       state.traps.splice(i, 1);
       didChange = true;
       continue;
@@ -45,7 +53,21 @@ const updateTraps = (state: GameState, dt: number, size: number, onStateChange: 
     const trap = trapByKey.get(key);
     if (!trap) continue;
 
-    if (trap.type.damage) {
+    playTrapSound(trap.type.id);
+    if (trap.type.killsAll) {
+      for (const target of state.enemies) {
+        target.hp = 0;
+      }
+      const radius = Math.hypot(cols, rows) * size;
+      const center = tileCenter(trap.col, trap.row, size);
+      state.effects.push({
+        x: center.x,
+        y: center.y,
+        radius,
+        time: 0,
+        duration: 0.5,
+      });
+    } else if (trap.type.damage) {
       if (trap.type.splashRadiusTiles) {
         const center = tileCenter(trap.col, trap.row, size);
         const radius = trap.type.splashRadiusTiles * size;
@@ -55,23 +77,46 @@ const updateTraps = (state: GameState, dt: number, size: number, onStateChange: 
           const dy = target.y - center.y;
           const dist = Math.hypot(dx, dy);
           if (dist > radius) continue;
-          target.hp -= trap.type.damage;
-          pushDamagePopup(target.x, target.y, Math.round(trap.type.damage));
+          const damage = applyDamageModifiers(
+            trap.type.damage,
+            trap.type.damageType,
+            target.damageResistances,
+            target.damageGroupResistances,
+          );
+          target.hp -= damage;
+          pushDamagePopup(target.x, target.y, Math.round(damage));
+          if (trap.type.slowMultiplier && trap.type.slowDuration) {
+            applySlow(target, trap.type.slowMultiplier, trap.type.slowDuration);
+          }
         }
+        state.effects.push({
+          x: center.x,
+          y: center.y,
+          radius,
+          time: 0,
+          duration: 0.35,
+        });
       } else {
-        enemy.hp -= trap.type.damage;
-        pushDamagePopup(enemy.x, enemy.y, Math.round(trap.type.damage));
+        const damage = applyDamageModifiers(
+          trap.type.damage,
+          trap.type.damageType,
+          enemy.damageResistances,
+          enemy.damageGroupResistances,
+        );
+        enemy.hp -= damage;
+        pushDamagePopup(enemy.x, enemy.y, Math.round(damage));
+        if (trap.type.slowMultiplier && trap.type.slowDuration) {
+          applySlow(enemy, trap.type.slowMultiplier, trap.type.slowDuration);
+        }
       }
-    }
-
-    if (trap.type.slowMultiplier && trap.type.slowDuration) {
+    } else if (trap.type.slowMultiplier && trap.type.slowDuration) {
       applySlow(enemy, trap.type.slowMultiplier, trap.type.slowDuration);
     }
 
     if (trap.triggersRemaining !== undefined) {
       trap.triggersRemaining = Math.max(0, trap.triggersRemaining - 1);
       if (trap.triggersRemaining === 0) {
-        trap.remaining = 0;
+        didChange = true;
       }
     }
 

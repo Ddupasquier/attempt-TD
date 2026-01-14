@@ -43,6 +43,8 @@ const spawnEnemy = (state: GameState, wave: WaveState) => {
     type,
     targetIndex: 1,
     sizeScale: typeStats.sizeScale,
+    damageResistances: typeStats.damageResistances,
+    damageGroupResistances: typeStats.damageGroupResistances,
   });
   wave.remainingEnemies += 1;
 };
@@ -62,6 +64,8 @@ const spawnBossEnemy = (state: GameState, wave: WaveState) => {
     targetIndex: 1,
     isBoss: true,
     sizeScale: GAME_CONFIG.enemy.bossScale,
+    damageResistances: GAME_CONFIG.enemy.bossDamageResistances,
+    damageGroupResistances: GAME_CONFIG.enemy.bossDamageGroupResistances,
   });
   wave.remainingEnemies += 1;
 };

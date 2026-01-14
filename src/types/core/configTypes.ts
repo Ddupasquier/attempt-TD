@@ -1,4 +1,10 @@
-import type { Grid, TowerType, TrapType } from "./types";
+import type {
+  DamageGroupResistances,
+  DamageResistances,
+  Grid,
+  TowerType,
+  TrapType,
+} from "./types";
 
 type TowerLevelStats = {
   damageMult: number;
@@ -67,6 +73,8 @@ type GameConfig = {
         sizeScale: number;
         knockbackResistSeconds: number;
         knockbackDistanceMultiplier: number;
+        damageResistances?: DamageResistances;
+        damageGroupResistances?: DamageGroupResistances;
       };
       raider: {
         hpMultiplier: number;
@@ -74,6 +82,8 @@ type GameConfig = {
         sizeScale: number;
         knockbackResistSeconds: number;
         knockbackDistanceMultiplier: number;
+        damageResistances?: DamageResistances;
+        damageGroupResistances?: DamageGroupResistances;
       };
       bruiser: {
         hpMultiplier: number;
@@ -81,6 +91,8 @@ type GameConfig = {
         sizeScale: number;
         knockbackResistSeconds: number;
         knockbackDistanceMultiplier: number;
+        damageResistances?: DamageResistances;
+        damageGroupResistances?: DamageGroupResistances;
       };
       bulwark: {
         hpMultiplier: number;
@@ -88,6 +100,8 @@ type GameConfig = {
         sizeScale: number;
         knockbackResistSeconds: number;
         knockbackDistanceMultiplier: number;
+        damageResistances?: DamageResistances;
+        damageGroupResistances?: DamageGroupResistances;
       };
       elite: {
         hpMultiplier: number;
@@ -95,8 +109,12 @@ type GameConfig = {
         sizeScale: number;
         knockbackResistSeconds: number;
         knockbackDistanceMultiplier: number;
+        damageResistances?: DamageResistances;
+        damageGroupResistances?: DamageGroupResistances;
       };
     };
+    bossDamageResistances?: DamageResistances;
+    bossDamageGroupResistances?: DamageGroupResistances;
     typeSpawnWeights: Array<{
       maxWave: number;
       weights: Partial<Record<"skirmisher" | "raider" | "bruiser" | "bulwark" | "elite", number>>;

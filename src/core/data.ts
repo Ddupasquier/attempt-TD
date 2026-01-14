@@ -317,6 +317,23 @@ const trapSprites: Record<string, PixelSprite> = {
       y: "#d3643a",
     },
   },
+  [TRAP_IDS.nuke]: {
+    pixels: [
+      "........",
+      "..xxx...",
+      ".xooox..",
+      ".xooxx...",
+      ".xooox..",
+      "..xxx...",
+      "...y....",
+      "........",
+    ],
+    colors: {
+      x: "#2b2b2b",
+      o: "#d88f3a",
+      y: "#f2d65c",
+    },
+  },
 };
 
 export {

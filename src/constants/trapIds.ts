@@ -4,6 +4,7 @@ const TRAP_IDS = {
   glue: "glue",
   spike: "spike",
   shock: "shock",
+  nuke: "nuke",
 } as const;
 
 export { TRAP_IDS };

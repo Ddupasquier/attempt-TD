@@ -5,6 +5,7 @@ type HudOverlayProps = {
   towerSprites: Record<string, PixelSprite>;
   trapTypes: TrapType[];
   trapSprites: Record<string, PixelSprite>;
+  trapCooldowns: Record<string, number>;
   selectedTowerTypeId: string | null;
   gold: number;
   lives: number;

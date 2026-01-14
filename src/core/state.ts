@@ -8,6 +8,7 @@ const createInitialState = (): GameState => ({
   wave: GAME_CONFIG.gameplay.startingWave,
   towers: [],
   traps: [],
+  trapCooldowns: {},
   enemies: [],
   projectiles: [],
   effects: [],

@@ -69,6 +69,7 @@
     {towerSprites}
     {trapTypes}
     {trapSprites}
+    trapCooldowns={$uiState.trapCooldowns}
     selectedTowerTypeId={$uiState.selectedTowerTypeId}
     gold={$uiState.gold}
     lives={$uiState.lives}

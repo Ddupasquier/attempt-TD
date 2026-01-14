@@ -4,6 +4,7 @@ type TrapCardProps = {
   trap: TrapType;
   sprite?: PixelSprite;
   isActive: boolean;
+  cooldownRemaining?: number;
   onSelect: (trapId: string | null) => void;
   onStartDrag: (trapId: string) => void;
 };

@@ -8,7 +8,7 @@ const UI_TEXT = {
   factionsLabel: "Factions",
   hintDrag: "Drag a tower or trap card to place it.",
   hintTowerSelect: "Click a tower to view details.",
-  hintTrapDrag: "Drag a trap onto the path. Traps expire.",
+  hintTrapDrag: "Drag a trap onto the path. Traps have limited uses.",
   upgradeTitle: "Tower Upgrade",
   upgradePrompt: "Level up this tower?",
   upgradeButton: "Upgrade",

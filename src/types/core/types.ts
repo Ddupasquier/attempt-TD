@@ -1,3 +1,24 @@
+type DamageType =
+  | "bludgeoning"
+  | "piercing"
+  | "slashing"
+  | "acid"
+  | "cold"
+  | "fire"
+  | "force"
+  | "lightning"
+  | "necrotic"
+  | "poison"
+  | "psychic"
+  | "radiant"
+  | "thunder";
+
+type DamageGroup = "physical" | "magical";
+
+type DamageResistances = Partial<Record<DamageType, number>>;
+
+type DamageGroupResistances = Partial<Record<DamageGroup, number>>;
+
 type TowerType = {
   id: string;
   name: string;
@@ -6,9 +27,12 @@ type TowerType = {
   range: number;
   rate: number;
   damage: number;
+  damageType: DamageType;
   critChance: number;
   critMultiplier: number;
   knockback: number;
+  damageResistances?: DamageResistances;
+  damageGroupResistances?: DamageGroupResistances;
   color: string;
   description: string;
 };
@@ -18,12 +42,15 @@ type TrapType = {
   name: string;
   types: string[];
   cost: number;
-  duration: number;
   maxTriggers?: number;
+  cooldownSeconds?: number;
+  cooldownPerWave?: boolean;
   damage?: number;
+  damageType?: DamageType;
   splashRadiusTiles?: number;
   slowMultiplier?: number;
   slowDuration?: number;
+  killsAll?: boolean;
   description: string;
 };
 
@@ -73,6 +100,8 @@ type Enemy = {
   slowMultiplier?: number;
   lastTrapTile?: string;
   reachedEnd?: boolean;
+  damageResistances?: DamageResistances;
+  damageGroupResistances?: DamageGroupResistances;
 };
 
 type WaveState = {
@@ -96,6 +125,7 @@ type Projectile = {
   targetY?: number;
   speed: number;
   damage: number;
+  damageType: DamageType;
   color: string;
   towerTypeId: string;
   originX: number;
@@ -111,7 +141,6 @@ type Trap = {
   col: number;
   row: number;
   type: TrapType;
-  remaining: number;
   triggersRemaining?: number;
 };
 
@@ -134,6 +163,7 @@ type GameState = {
   wave: number;
   towers: Tower[];
   traps: Trap[];
+  trapCooldowns: Record<string, number>;
   enemies: Enemy[];
   projectiles: Projectile[];
   effects: SplashEffect[];
@@ -174,14 +204,55 @@ type SaveData = {
   autoWaveEnabled?: boolean;
   showDamagePopups?: boolean;
   selectedTowerId: string | null;
+  trapCooldowns?: Record<string, number>;
+  isCountingDown?: boolean;
+  countdownRemaining?: number;
+  waves?: Array<{
+    id: string;
+    waveNumber: number;
+    spawnTimer: number;
+    spawnIndex: number;
+    totalSpawns: number;
+    remainingEnemies: number;
+    bossSpawned?: boolean;
+    livesLost?: boolean;
+  }>;
+  enemies?: Array<{
+    id: string;
+    hp: number;
+    maxHp: number;
+    speed: number;
+    waveId: string;
+    faction: FactionId;
+    type: EnemyType;
+    targetIndex: number;
+    isBoss?: boolean;
+    sizeScale?: number;
+    x?: number;
+    y?: number;
+    vx?: number;
+    vy?: number;
+    knockbackRemaining?: number;
+    knockbackResistRemaining?: number;
+    slowRemaining?: number;
+    slowMultiplier?: number;
+    lastTrapTile?: string;
+  }>;
   traps?: Array<{
     col: number;
     row: number;
     typeId: string;
-    remaining?: number;
     triggersRemaining?: number;
   }>;
-  towers: Array<{ col: number; row: number; typeId: string; level?: number; targetCol?: number; targetRow?: number }>;
+  towers: Array<{
+    col: number;
+    row: number;
+    typeId: string;
+    level?: number;
+    cooldown?: number;
+    targetCol?: number;
+    targetRow?: number;
+  }>;
 };
 
 type PixelSprite = {
@@ -190,6 +261,10 @@ type PixelSprite = {
 };
 
 export type {
+  DamageGroup,
+  DamageGroupResistances,
+  DamageResistances,
+  DamageType,
   Enemy,
   EnemyType,
   FactionConfig,

@@ -4,6 +4,7 @@ import { SPELL_SCROLL_IDS } from "../src/constants/spellScrollIds";
 import { getDefenseTonePreset, isSpellScrollSoundEffect } from "../src/core/audioConfig";
 
 describe("audio config", () => {
+  // Ensure every defense produces a valid sound preset to avoid silent attacks.
   it("gives every defense a valid tone preset", () => {
     const failures: string[] = [];
     for (const defense of GAME_CONFIG.defenseTypes) {
@@ -19,6 +20,7 @@ describe("audio config", () => {
     expect(failures).toEqual([]);
   });
 
+  // Enforce which spell scrolls are allowed to emit audio effects.
   it("only assigns sound effects to supported spell scrolls", () => {
     const requiredScrollSoundIds = new Set<string>([
       SPELL_SCROLL_IDS.shock,

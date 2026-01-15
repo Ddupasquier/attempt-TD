@@ -1,12 +1,15 @@
+// Pixi draws everything you see on the map.
 import * as PIXI from "pixi.js";
 import { getTerrainFeatureAtTile } from "../core/terrain";
 import { tileCenter } from "../core/geometry";
 import { getDefenseStats, MAX_DEFENSE_LEVEL } from "../core/defenseLevels";
 import { applyAuraToStats, getDefenseAuraMultipliers } from "../core/defenseAuras";
+import { getDevConfig, isDevEnabled } from "../core/devFlags";
 import type { Foe, PixelSprite, Projectile, Defense } from "../types/core/types";
 import { DEFENSE_IDS } from "../constants/defenseIds";
 import type { FrameData, RendererOptions } from "../types/render/pixiRendererTypes";
 
+// Small helper to make "random" map noise that is the same every time.
 const hash = (col: number, row: number, salt: number) => {
   let value = (col + 37) * 928371 + (row + 17) * 523987 + salt * 9349;
   value ^= value << 13;
@@ -15,8 +18,10 @@ const hash = (col: number, row: number, salt: number) => {
   return Math.abs(value);
 };
 
+// Convert "#rrggbb" into a number Pixi can use.
 const hexToNumber = (color: string) => Number.parseInt(color.replace("#", ""), 16);
 
+// Turn a tiny pixel map into a Pixi texture.
 const createSpriteTexture = (sprite: PixelSprite) => {
   const width = sprite.pixels[0]?.length ?? 8;
   const height = sprite.pixels.length;
@@ -44,6 +49,82 @@ const createSpriteTexture = (sprite: PixelSprite) => {
   return texture;
 };
 
+// Load animation frames from a folder of PNGs.
+const loadAnimationTextures = async (modules: Record<string, string>) => {
+  const frames = Object.entries(modules).map(([path, url]) => ({ path, url }));
+  frames.sort((a, b) => {
+    const matchA = a.path.match(/_(\d+)\.png$/);
+    const matchB = b.path.match(/_(\d+)\.png$/);
+    if (matchA && matchB) {
+      return Number(matchA[1]) - Number(matchB[1]);
+    }
+    return a.path.localeCompare(b.path);
+  });
+  const urls = frames.map((frame) => frame.url);
+  if (urls.length === 0) return [];
+  await PIXI.Assets.load(urls);
+  return urls.map((url) => PIXI.Texture.from(url));
+};
+
+// Find the smallest box that wraps the visible pixels.
+const getSpriteBounds = (sprite: PixelSprite) => {
+  const width = sprite.pixels[0]?.length ?? 1;
+  const height = sprite.pixels.length;
+  let minX = width;
+  let maxX = 0;
+  let minY = height;
+  let maxY = 0;
+  let hasPixel = false;
+
+  for (let y = 0; y < height; y += 1) {
+    const row = sprite.pixels[y];
+    for (let x = 0; x < width; x += 1) {
+      const key = row[x];
+      if (key === "." || !key) continue;
+      hasPixel = true;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+  }
+
+  if (!hasPixel) {
+    return { minX: 0, minY: 0, maxX: width - 1, maxY: height - 1 };
+  }
+  return { minX, minY, maxX, maxY };
+};
+
+// Make a texture with a little empty border around the sprite.
+const createPaddedSpriteTexture = (sprite: PixelSprite, padding = 1) => {
+  const { minX, minY, maxX, maxY } = getSpriteBounds(sprite);
+  const boundsWidth = maxX - minX + 1;
+  const boundsHeight = maxY - minY + 1;
+  const canvas = document.createElement("canvas");
+  canvas.width = boundsWidth + padding * 2;
+  canvas.height = boundsHeight + padding * 2;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return PIXI.Texture.WHITE;
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let row = minY; row <= maxY; row += 1) {
+    const line = sprite.pixels[row];
+    for (let col = minX; col <= maxX; col += 1) {
+      const key = line[col];
+      if (key === "." || !key) continue;
+      const color = sprite.colors[key];
+      if (!color) continue;
+      ctx.fillStyle = color;
+      ctx.fillRect(col - minX + padding, row - minY + padding, 1, 1);
+    }
+  }
+  const texture = PIXI.Texture.from(canvas);
+  texture.source.scaleMode = "nearest";
+  return texture;
+};
+
+// Build a simple rock texture for siege shots.
 const createRockTexture = (diameter = 32) => {
   const canvas = document.createElement("canvas");
   canvas.width = diameter;
@@ -95,6 +176,7 @@ const createRockTexture = (diameter = 32) => {
   return texture;
 };
 
+// Draw a tiny block of color.
 const fillRect = (
   graphics: PIXI.Graphics,
   color: number,
@@ -106,6 +188,7 @@ const fillRect = (
   graphics.fill(color).rect(x, y, width, height);
 };
 
+// Paint the grass, path, and little terrain details.
 const buildTerrainGraphics = (
   graphics: PIXI.Graphics,
   size: number,
@@ -233,6 +316,7 @@ const buildTerrainGraphics = (
   }
 };
 
+// Make the whole drawing system.
 const createPixiRenderer = async (options: RendererOptions) => {
   const app = new PIXI.Application();
   await app.init({
@@ -243,7 +327,9 @@ const createPixiRenderer = async (options: RendererOptions) => {
     antialias: false,
   });
 
+  // Layers are stacked like paper. Back first, front last.
   const terrainLayer = new PIXI.Graphics();
+  const gridLayer = new PIXI.Graphics();
   const defensesLayer = new PIXI.Container();
   const starsLayer = new PIXI.Container();
   const spellScrollsLayer = new PIXI.Container();
@@ -253,8 +339,10 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const damageLayer = new PIXI.Container();
   const overlayLayer = new PIXI.Container();
 
+  // Add all layers in order.
   app.stage.addChild(
     terrainLayer,
+    gridLayer,
     defensesLayer,
     starsLayer,
     spellScrollsLayer,
@@ -265,14 +353,27 @@ const createPixiRenderer = async (options: RendererOptions) => {
     overlayLayer,
   );
 
+  // Make textures once and reuse them.
   const defenseTextures = new Map<string, PIXI.Texture>();
   const spellScrollTextures = new Map<string, PIXI.Texture>();
   const foeTextures = new Map<string, PIXI.Texture>();
+  const wizardFrames = await loadAnimationTextures(
+    import.meta.glob("/src/assets/animations/wizard_idle/*.png", {
+      eager: true,
+      query: "?url",
+      import: "default",
+    }),
+  );
   Object.entries(options.defenseSprites).forEach(([key, sprite]) => {
-    defenseTextures.set(key, createSpriteTexture(sprite));
+    defenseTextures.set(key, createPaddedSpriteTexture(sprite, 1));
   });
+  const wizardStaticFrame = wizardFrames[0];
+  const hasWizardAnimation = wizardFrames.length > 1;
+  if (wizardStaticFrame) {
+    defenseTextures.set(DEFENSE_IDS.wizard, wizardStaticFrame);
+  }
   Object.entries(options.spellScrollSprites).forEach(([key, sprite]) => {
-    spellScrollTextures.set(key, createSpriteTexture(sprite));
+    spellScrollTextures.set(key, createPaddedSpriteTexture(sprite, 1));
   });
   Object.entries(options.foeSprites).forEach(([factionId, sprites]) => {
     Object.entries(sprites).forEach(([type, sprite]) => {
@@ -281,6 +382,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
   });
   const rockTexture = createRockTexture();
 
+  // Keep sprites in maps so we can update them by id.
   const defenseSpritesById = new Map<string, PIXI.Sprite>();
   const spellScrollSpritesById = new Map<string, PIXI.Sprite>();
   const starGraphicsById = new Map<string, PIXI.Graphics>();
@@ -291,15 +393,18 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const overlayGraphics = new PIXI.Graphics();
   const overlayDragSprite = new PIXI.Sprite();
 
+  // Drag preview sprite is hidden until needed.
   overlayDragSprite.anchor.set(0.5);
   overlayDragSprite.visible = false;
   overlayLayer.addChild(overlayGraphics, overlayDragSprite);
 
+  // Keep the Pixi renderer the same size as the canvas.
   const resizeToCanvas = () => {
     const rect = options.canvas.getBoundingClientRect();
     app.renderer.resize(rect.width, rect.height);
   };
 
+  // Draw a star icon for upgrades.
   const drawStar = (graphics: PIXI.Graphics, x: number, y: number, outerRadius: number, color: number) => {
     const innerRadius = outerRadius * 0.5;
     const points: number[] = [];
@@ -311,14 +416,40 @@ const createPixiRenderer = async (options: RendererOptions) => {
     graphics.poly(points).fill(color);
   };
 
+  // Draw the debug grid lines on the map when dev overlay is enabled.
+  const buildGridGraphics = (graphics: PIXI.Graphics, size: number, cols: number, rows: number) => {
+    graphics.clear();
+    if (!isDevEnabled()) return;
+    const config = getDevConfig().gridOverlay;
+    if (!config.enabled) return;
+    const color = config.color ?? 0xff0000;
+    const alpha = config.alpha ?? 0.6;
+    const width = config.width ?? 1;
+    graphics.setStrokeStyle({ color, alpha, width });
+    for (let col = 0; col <= cols; col += 1) {
+      const x = col * size;
+      graphics.moveTo(x, 0);
+      graphics.lineTo(x, rows * size);
+    }
+    for (let row = 0; row <= rows; row += 1) {
+      const y = row * size;
+      graphics.moveTo(0, y);
+      graphics.lineTo(cols * size, y);
+    }
+    graphics.stroke();
+  };
+
+  // Place and update defense sprites and stars.
   const updateDefenses = (size: number, defenses: Defense[]) => {
     const activeIds = new Set(defenses.map((defense) => defense.id));
+    // Remove sprites that no longer exist.
     for (const [id, sprite] of defenseSpritesById.entries()) {
       if (!activeIds.has(id)) {
         defensesLayer.removeChild(sprite);
         defenseSpritesById.delete(id);
       }
     }
+    // Remove stars that no longer exist.
     for (const [id, starGraphic] of starGraphicsById.entries()) {
       if (!activeIds.has(id)) {
         starsLayer.removeChild(starGraphic);
@@ -328,18 +459,64 @@ const createPixiRenderer = async (options: RendererOptions) => {
     for (const defense of defenses) {
       let sprite = defenseSpritesById.get(defense.id);
       if (!sprite) {
-        const texture = defenseTextures.get(defense.type.id) ?? PIXI.Texture.WHITE;
-        sprite = new PIXI.Sprite(texture);
+        // Make a new sprite if we don't have one yet.
+        if (defense.type.id === DEFENSE_IDS.wizard && hasWizardAnimation) {
+          const animated = new PIXI.AnimatedSprite(wizardFrames);
+          animated.animationSpeed = 0.05;
+          animated.play();
+          sprite = animated;
+        } else if (defense.type.id === DEFENSE_IDS.wizard && wizardStaticFrame) {
+          sprite = new PIXI.Sprite(wizardStaticFrame);
+        } else {
+          const texture = defenseTextures.get(defense.type.id) ?? PIXI.Texture.WHITE;
+          sprite = new PIXI.Sprite(texture);
+        }
         sprite.anchor.set(0.5);
+        sprite.roundPixels = true;
         defensesLayer.addChild(sprite);
         defenseSpritesById.set(defense.id, sprite);
       }
+      if (defense.type.id === DEFENSE_IDS.wizard && wizardStaticFrame) {
+        if (hasWizardAnimation) {
+          if (sprite instanceof PIXI.AnimatedSprite) {
+            if (sprite.textures !== wizardFrames) {
+              sprite.textures = wizardFrames;
+              sprite.play();
+            }
+          } else {
+            defensesLayer.removeChild(sprite);
+            const animated = new PIXI.AnimatedSprite(wizardFrames);
+            animated.animationSpeed = 0.12;
+            animated.play();
+            animated.anchor.set(0.5);
+            animated.roundPixels = true;
+            defensesLayer.addChild(animated);
+            defenseSpritesById.set(defense.id, animated);
+            sprite = animated;
+          }
+        } else if (!(sprite instanceof PIXI.Sprite)) {
+          defensesLayer.removeChild(sprite);
+          const staticSprite = new PIXI.Sprite(wizardStaticFrame);
+          staticSprite.anchor.set(0.5);
+          staticSprite.roundPixels = true;
+          defensesLayer.addChild(staticSprite);
+          defenseSpritesById.set(defense.id, staticSprite);
+          sprite = staticSprite;
+        } else if (sprite.texture !== wizardStaticFrame) {
+          sprite.texture = wizardStaticFrame;
+        }
+      }
+      // Center on the tile.
       const center = tileCenter(defense.col, defense.row, size);
       const textureWidth = sprite.texture.width || 1;
-      const scale = (size * 0.56) / textureWidth;
-      sprite.scale.set(scale);
+      const textureHeight = sprite.texture.height || 1;
+      // Scale so the sprite fits inside the tile on both axes.
+      const scale = size / Math.max(textureWidth, textureHeight);
+      const facing = defense.facing ?? 1;
+      sprite.scale.set(scale * facing, scale);
       sprite.position.set(center.x, center.y);
 
+      // Draw upgrade stars above the defense.
       const level = Math.min(defense.level, MAX_DEFENSE_LEVEL);
       if (level > 0) {
         let starGraphic = starGraphicsById.get(defense.id);
@@ -369,8 +546,10 @@ const createPixiRenderer = async (options: RendererOptions) => {
     }
   };
 
+  // Place and update spell scroll sprites.
   const updateSpellScrolls = (size: number, spellScrolls: Array<{ id: string; col: number; row: number; type: { id: string } }>) => {
     const activeIds = new Set(spellScrolls.map((spellScroll) => spellScroll.id));
+    // Remove old scroll sprites.
     for (const [id, sprite] of spellScrollSpritesById.entries()) {
       if (!activeIds.has(id)) {
         spellScrollsLayer.removeChild(sprite);
@@ -381,28 +560,34 @@ const createPixiRenderer = async (options: RendererOptions) => {
     for (const spellScroll of spellScrolls) {
       let sprite = spellScrollSpritesById.get(spellScroll.id);
       if (!sprite) {
+        // Make a new scroll sprite if needed.
         const texture = spellScrollTextures.get(spellScroll.type.id) ?? PIXI.Texture.WHITE;
         sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5);
         spellScrollsLayer.addChild(sprite);
         spellScrollSpritesById.set(spellScroll.id, sprite);
       }
+      // Center on the tile.
       const center = tileCenter(spellScroll.col, spellScroll.row, size);
       const textureWidth = sprite.texture.width || 1;
-      const scale = (size * 0.4) / textureWidth;
+      // Scale so it fits the tile.
+      const scale = size / textureWidth;
       sprite.scale.set(scale);
       sprite.position.set(center.x, center.y);
     }
   };
 
+  // Place and update enemies and their health bars.
   const updateEnemies = (size: number, foes: Foe[]) => {
     const activeIds = new Set(foes.map((foe) => foe.id));
+    // Remove foe sprites that are gone.
     for (const [id, sprite] of foeSpritesById.entries()) {
       if (!activeIds.has(id)) {
         foesLayer.removeChild(sprite);
         foeSpritesById.delete(id);
       }
     }
+    // Remove health bars that are gone.
     for (const [id, bar] of healthBarsById.entries()) {
       if (!activeIds.has(id)) {
         healthBarsLayer.removeChild(bar);
@@ -413,6 +598,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
       if (foe.x === undefined || foe.y === undefined) continue;
       let sprite = foeSpritesById.get(foe.id);
       if (!sprite) {
+        // Make a new foe sprite if needed.
         const textureKey = `${foe.faction}:${foe.type}`;
         const texture =
           foeTextures.get(textureKey) ?? foeTextures.get(`${foe.faction}:grunt`) ?? PIXI.Texture.WHITE;
@@ -427,6 +613,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
       sprite.scale.set(scale);
       sprite.position.set(foe.x, foe.y);
 
+      // Draw the HP bar above the foe.
       let bar = healthBarsById.get(foe.id);
       if (!bar) {
         bar = new PIXI.Graphics();
@@ -447,6 +634,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
     }
   };
 
+  // Draw projectiles (arrows, rocks, magic bolts).
   const updateProjectiles = (size: number, projectiles: Projectile[]) => {
     while (projectilePool.length < projectiles.length) {
       const sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
@@ -481,6 +669,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
     }
   };
 
+  // Draw floating damage numbers.
   const updateDamagePopups = (
     size: number,
     popups: Array<{
@@ -529,9 +718,11 @@ const createPixiRenderer = async (options: RendererOptions) => {
     }
   };
 
+  // Draw things on top: effects, ranges, and drag previews.
   const updateOverlay = (frame: FrameData) => {
     overlayGraphics.clear();
     overlayDragSprite.visible = false;
+    // Splash circles.
     if (frame.effects.length > 0) {
       for (const effect of frame.effects) {
         const progress = Math.min(1, Math.max(0, effect.time / effect.duration));
@@ -542,6 +733,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
           .stroke({ width: Math.max(1, frame.size * 0.03), color: 0x2b1f14, alpha });
       }
     }
+    // Red crosshair for siege targeting.
     if (frame.targetIndicator) {
       const strokeWidth = Math.max(1.5, frame.size * 0.05);
       const arm = frame.size * 0.25;
@@ -556,6 +748,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
         .circle(frame.targetIndicator.x, frame.targetIndicator.y, frame.size * 0.18)
         .stroke({ width: Math.max(1, frame.size * 0.03), color: 0xff3b30, alpha: alpha * 0.8 });
     }
+    // Range circle for selected defense.
     if (frame.highlightedDefenseId && frame.highlightAlpha > 0) {
       const defense = frame.defenses.find((item) => item.id === frame.highlightedDefenseId);
       if (defense) {
@@ -568,6 +761,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
           .stroke({ width: strokeWidth, color: 0xffffff, alpha: 0.45 * frame.highlightAlpha });
       }
     }
+    // Preview when dragging a defense.
     if (frame.dragPreview) {
       const strokeWidth = Math.max(1.5, frame.size * 0.04);
       overlayGraphics
@@ -577,14 +771,17 @@ const createPixiRenderer = async (options: RendererOptions) => {
         ? defenseTextures.get(frame.dragPreview.spriteId) ?? PIXI.Texture.WHITE
         : PIXI.Texture.WHITE;
       const scale = frame.dragPreview.spriteId
-        ? (frame.size * 0.56) / (texture.width || 1)
+        ? frame.size / (texture.width || 1)
         : (frame.size * 0.28) / (texture.width || 1);
       overlayDragSprite.texture = texture;
       overlayDragSprite.scale.set(scale);
+      overlayDragSprite.anchor.set(0.5);
       overlayDragSprite.tint = frame.dragPreview.spriteId ? 0xffffff : hexToNumber(frame.dragPreview.color);
+      overlayDragSprite.roundPixels = true;
       overlayDragSprite.position.set(frame.dragPreview.x, frame.dragPreview.y);
       overlayDragSprite.visible = true;
     }
+    // Preview when dragging a spell scroll.
     if (frame.spellScrollPreview) {
       const strokeWidth = Math.max(1.2, frame.size * 0.03);
       if (frame.spellScrollPreview.radius) {
@@ -595,15 +792,18 @@ const createPixiRenderer = async (options: RendererOptions) => {
       const texture = frame.spellScrollPreview.spriteId
         ? spellScrollTextures.get(frame.spellScrollPreview.spriteId) ?? PIXI.Texture.WHITE
         : PIXI.Texture.WHITE;
-      const scale = (frame.size * 0.4) / (texture.width || 1);
+      const scale = frame.size / (texture.width || 1);
       overlayDragSprite.texture = texture;
       overlayDragSprite.scale.set(scale);
       overlayDragSprite.tint = 0xffffff;
+      overlayDragSprite.roundPixels = false;
       overlayDragSprite.position.set(frame.spellScrollPreview.x, frame.spellScrollPreview.y);
       overlayDragSprite.visible = true;
     }
+
   };
 
+  // One full render pass.
   const updateFrame = (frame: FrameData) => {
     updateDefenses(frame.size, frame.defenses);
     updateSpellScrolls(frame.size, frame.spellScrolls);
@@ -613,8 +813,10 @@ const createPixiRenderer = async (options: RendererOptions) => {
     updateOverlay(frame);
   };
 
+  // Rebuild the map background when size changes.
   const rebuildTerrain = (size: number, cols: number, rows: number) => {
     buildTerrainGraphics(terrainLayer, size, cols, rows, options.pathTiles);
+    buildGridGraphics(gridLayer, size, cols, rows);
   };
 
   return { app, updateFrame, rebuildTerrain, resizeToCanvas };

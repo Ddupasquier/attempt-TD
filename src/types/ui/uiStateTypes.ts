@@ -45,6 +45,7 @@ type DefenseUpgradePopup = {
     rate: number;
     knockback: number;
   } | null;
+  benefits: string[];
 };
 
 export type { DefenseUpgradePopup, UiState };

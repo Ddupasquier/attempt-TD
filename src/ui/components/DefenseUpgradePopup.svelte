@@ -94,6 +94,13 @@
         </span>
       </div>
     </div>
+    {#if popup.benefits.length}
+      <div class="defense-upgrade__benefits">
+        {#each popup.benefits as benefit}
+          <div class="defense-upgrade__benefit">{benefit}</div>
+        {/each}
+      </div>
+    {/if}
   </div>
   <button
     class="defense-upgrade__button"

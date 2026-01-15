@@ -22,7 +22,7 @@ const bardDefense: DefenseType = {
       damageResistances: {},
       damageGroupResistances: {},
       color: "#b58ad6",
-      description: "Inspiring melodies bolster nearby allies.",
+      description: "Inspiring melodies boost nearby defenses (damage +12%, range +10%, rate +10%).",
     };
 
 export { bardDefense };

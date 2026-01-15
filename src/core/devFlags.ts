@@ -9,6 +9,12 @@ type DamagePopupStyle = {
 type DevConfig = {
   enabled: boolean;
   infiniteGold: boolean;
+  gridOverlay: {
+    enabled: boolean;
+    color?: number;
+    alpha?: number;
+    width?: number;
+  };
   siegeDamagePopup: {
     enabled: boolean;
     color?: string;
@@ -38,6 +44,9 @@ if (!local && import.meta.env.DEV) {
 const DEFAULT_CONFIG: DevConfig = {
   enabled: false,
   infiniteGold: false,
+  gridOverlay: {
+    enabled: false,
+  },
   siegeDamagePopup: {
     enabled: false,
   },
@@ -53,6 +62,10 @@ const IS_DEV = Boolean(local?.IS_DEV);
 const DEV_CONFIG: DevConfig = {
   ...DEFAULT_CONFIG,
   ...local?.DEV_CONFIG,
+  gridOverlay: {
+    ...DEFAULT_CONFIG.gridOverlay,
+    ...(local?.DEV_CONFIG?.gridOverlay ?? {}),
+  },
   siegeDamagePopup: {
     ...DEFAULT_CONFIG.siegeDamagePopup,
     ...(local?.DEV_CONFIG?.siegeDamagePopup ?? {}),

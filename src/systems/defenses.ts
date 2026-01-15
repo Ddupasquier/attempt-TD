@@ -35,6 +35,8 @@ const updateDefenses = (state: GameState, dt: number, size: number) => {
       const isCrit = Math.random() < effectiveStats.critChance;
       const damage = effectiveStats.damage * (isCrit ? effectiveStats.critMultiplier : 1);
 
+      const facing = target.x < center.x ? -1 : 1;
+      defense.facing = facing;
       state.projectiles.push({
         x: center.x,
         y: center.y,
@@ -81,6 +83,8 @@ const updateDefenses = (state: GameState, dt: number, size: number) => {
     const knockbackDistance = effectiveStats.knockback * size;
     const isCrit = Math.random() < effectiveStats.critChance;
     const damage = effectiveStats.damage * (isCrit ? effectiveStats.critMultiplier : 1);
+    const facing = target.x < center.x ? -1 : 1;
+    defense.facing = facing;
     state.projectiles.push({
       x: center.x,
       y: center.y,

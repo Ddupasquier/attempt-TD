@@ -10,6 +10,7 @@ import { defenseSprites } from "../src/core/sprites/defenses";
 import { spellScrollSprites } from "../src/core/sprites/spellScrolls";
 
 describe("defense config integrity", () => {
+  // Guard against missing level stats/costs breaking upgrades.
   it("has upgrade data for every defense level", () => {
     expect(DEFENSE_CONFIG.levelStats.length).toBe(DEFENSE_CONFIG.maxLevel + 1);
     const costLevels = new Set(DEFENSE_CONFIG.levelCosts.map((entry) => entry.level));
@@ -18,6 +19,7 @@ describe("defense config integrity", () => {
     }
   });
 
+  // Validate core defense fields so UI and combat stats don't blow up.
   it("keeps defense type ids unique and valid", () => {
     const ids = DEFENSE_CONFIG.types.map((defense) => defense.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -35,6 +37,7 @@ describe("defense config integrity", () => {
     }
   });
 
+  // Ensure every defense has a sprite mapping for rendering.
   it("has sprites for every defense type", () => {
     for (const defense of DEFENSE_CONFIG.types) {
       expect(defenseSprites[defense.id]).toBeTruthy();
@@ -43,6 +46,7 @@ describe("defense config integrity", () => {
 });
 
 describe("spell scroll config integrity", () => {
+  // Validate scroll metadata to prevent UI/tooling regressions.
   it("keeps spell scroll type ids unique and consistent", () => {
     const ids = SPELL_SCROLL_CONFIG.types.map((scroll) => scroll.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -66,6 +70,7 @@ describe("spell scroll config integrity", () => {
     }
   });
 
+  // Ensure each scroll has a sprite mapping for rendering.
   it("has sprites for every spell scroll type", () => {
     for (const scroll of SPELL_SCROLL_CONFIG.types) {
       expect(spellScrollSprites[scroll.id]).toBeTruthy();
@@ -74,6 +79,7 @@ describe("spell scroll config integrity", () => {
 });
 
 describe("foe config integrity", () => {
+  // Every faction in progression must exist and be configured.
   it("covers every faction in progression", () => {
     const progressionIds = FACTION_PROGRESSION.map((faction) => faction.id);
     expect(new Set(progressionIds).size).toBe(progressionIds.length);
@@ -83,6 +89,7 @@ describe("foe config integrity", () => {
     }
   });
 
+  // Prevent gaps/overlaps in the wave-to-faction mapping.
   it("keeps faction progression contiguous", () => {
     expect(FACTION_PROGRESSION[0]?.start).toBe(1);
     for (let i = 1; i < FACTION_PROGRESSION.length; i += 1) {
@@ -93,6 +100,7 @@ describe("foe config integrity", () => {
     }
   });
 
+  // Each faction must expose the full five-foe roster.
   it("defines five foe types per faction", () => {
     const requiredTypes = new Set(["swarm", "grunt", "tank", "elite", "boss"]);
     for (const faction of Object.values(FOE_FACTION_DEFINITIONS)) {

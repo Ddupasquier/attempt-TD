@@ -90,6 +90,7 @@ type Defense = {
   level: number;
   targetCol?: number;
   targetRow?: number;
+  facing?: 1 | -1;
 };
 
 type FactionId =
@@ -189,6 +190,7 @@ type FactionConfig = {
 type Grid = {
   cols: number;
   rows: number;
+  tileSize?: number;
 };
 
 type GameState = {

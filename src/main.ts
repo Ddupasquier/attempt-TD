@@ -193,9 +193,9 @@ const resizeCanvas = () => {
   const frame = canvas.parentElement;
   const mainWidth = mainLayout?.getBoundingClientRect().width ?? frame?.clientWidth ?? canvas.clientWidth;
   const mainHeight = mainLayout?.getBoundingClientRect().height ?? frame?.clientHeight ?? canvas.clientHeight;
-  const sizeFromWidth = mainWidth > 0 ? mainWidth / grid.cols : getTileSize(canvas, grid);
-  const sizeFromHeight = mainHeight > 0 ? mainHeight / grid.rows : sizeFromWidth;
-  const size = Math.min(sizeFromWidth, sizeFromHeight);
+  canvas.style.width = `${mainWidth}px`;
+  canvas.style.height = `${mainHeight}px`;
+  const size = getTileSize(canvas, grid);
   const mapWidth = size * grid.cols;
   const mapHeight = size * grid.rows;
   currentMapWidth = mapWidth;
@@ -363,6 +363,34 @@ const buildSelectedDefensePopup = () => {
   const statsNext = canUpgrade
     ? applyAuraToStats(getDefenseStatsAtLevel(defense, nextLevel), aura)
     : null;
+  const benefits: string[] = [];
+  if (statsNext) {
+    if (statsNext.damage !== statsCurrent.damage) {
+      benefits.push(
+        `Buff — Damage: ${statsCurrent.damage.toFixed(2)} → ${statsNext.damage.toFixed(2)}`,
+      );
+    }
+    if (statsNext.range !== statsCurrent.range) {
+      benefits.push(
+        `Buff — Range: ${statsCurrent.range.toFixed(2)} → ${statsNext.range.toFixed(2)}`,
+      );
+    }
+    if (statsNext.rate !== statsCurrent.rate) {
+      benefits.push(
+        `Buff — Rate: ${statsCurrent.rate.toFixed(2)} → ${statsNext.rate.toFixed(2)}`,
+      );
+    }
+    if (statsNext.knockback !== statsCurrent.knockback) {
+      benefits.push(
+        `Buff — Knockback: ${statsCurrent.knockback.toFixed(2)} → ${statsNext.knockback.toFixed(2)}`,
+      );
+    }
+    const slowConfig = defense.type.onHitSlow;
+    if (slowConfig && defense.level < slowConfig.minLevel && nextLevel >= slowConfig.minLevel) {
+      const slowPercent = Math.round((1 - slowConfig.multiplier) * 100);
+      benefits.push(`Buff — Unlocks on-hit slow: ${slowPercent}% for ${slowConfig.duration}s`);
+    }
+  }
 
   let x = center.x + size * 0.55;
   if (x + UPGRADE_POPUP_WIDTH > mapWidth - UPGRADE_POPUP_PADDING) {
@@ -400,6 +428,7 @@ const buildSelectedDefensePopup = () => {
           knockback: statsNext.knockback,
         }
       : null,
+    benefits,
   };
 };
 

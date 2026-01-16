@@ -1,18 +1,27 @@
 import type { Defense, DefenseAuraBonuses } from "../types/core/types";
+import { getDefenseStatsAtLevel } from "./defenseLevels";
 
 const getDefenseAuraMultipliers = (defense: Defense, defenses: Defense[]) => {
   let damageMult = 1;
   let rangeMult = 1;
   let rateMult = 1;
+  if (defense.type.auraBonuses) {
+    return { damageMult, rangeMult, rateMult };
+  }
   const falloffSteps = [1, 0.5, 0.25, 0.125];
   const auraBonusesList: DefenseAuraBonuses[] = [];
 
   for (const source of defenses) {
-    const auraRange = source.type.auraRangeTiles;
+    if (source.id === defense.id || source === defense) continue;
+    if (source.col === defense.col && source.row === defense.row) continue;
     const auraBonuses = source.type.auraBonuses;
-    if (!auraRange || !auraBonuses) continue;
-    const dist = Math.hypot(defense.col - source.col, defense.row - source.row);
-    if (dist > auraRange) continue;
+    if (!auraBonuses) continue;
+    if (source.type.id === defense.type.id) continue;
+    const auraRange = getDefenseStatsAtLevel(source, source.level).range;
+    const dx = defense.col - source.col;
+    const dy = defense.row - source.row;
+    const dist = Math.hypot(dx, dy);
+    if (dist > auraRange + 1e-6) continue;
     auraBonusesList.push(auraBonuses);
   }
 

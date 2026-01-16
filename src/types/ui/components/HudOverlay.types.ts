@@ -1,10 +1,11 @@
 import type { PixelSprite, DefenseType, SpellScrollType } from "../../core/types";
+import type { UiSprite } from "../uiSpriteTypes";
 
 type HudOverlayProps = {
   defenseTypes: DefenseType[];
-  defenseSprites: Record<string, PixelSprite>;
+  defenseSprites: Record<string, UiSprite>;
   spellScrollTypes: SpellScrollType[];
-  spellScrollSprites: Record<string, PixelSprite>;
+  spellScrollSprites: Record<string, UiSprite>;
   spellScrollCooldowns: Record<string, number>;
   defenseCounts: Record<string, number>;
   selectedDefenseTypeId: string | null;

@@ -39,13 +39,43 @@ type DefenseUpgradePopup = {
     rate: number;
     knockback: number;
   };
+  statsBase: {
+    damage: number;
+    range: number;
+    rate: number;
+    knockback: number;
+  };
+  statsBaseRaw: {
+    damage: number;
+    range: number;
+    rate: number;
+    knockback: number;
+  };
   statsNext: {
     damage: number;
     range: number;
     rate: number;
     knockback: number;
   } | null;
-  benefits: string[];
+  statsNextBase: {
+    damage: number;
+    range: number;
+    rate: number;
+    knockback: number;
+  } | null;
+  auraDebug?: {
+    sources: {
+      id: string;
+      typeId: string;
+      name: string;
+      col: number;
+      row: number;
+      range: number;
+      distance: number;
+      applies: boolean;
+      reason: string;
+    }[];
+  };
 };
 
 export type { DefenseUpgradePopup, UiState };

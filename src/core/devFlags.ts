@@ -21,6 +21,9 @@ type DevConfig = {
     duration?: number;
     sizeMult?: number;
   };
+  auraDebug: {
+    enabled: boolean;
+  };
   godMode: {
     enabled: boolean;
     invulnerableBase: boolean;
@@ -50,6 +53,9 @@ const DEFAULT_CONFIG: DevConfig = {
   siegeDamagePopup: {
     enabled: false,
   },
+  auraDebug: {
+    enabled: false,
+  },
   godMode: {
     enabled: false,
     invulnerableBase: false,
@@ -69,6 +75,10 @@ const DEV_CONFIG: DevConfig = {
   siegeDamagePopup: {
     ...DEFAULT_CONFIG.siegeDamagePopup,
     ...(local?.DEV_CONFIG?.siegeDamagePopup ?? {}),
+  },
+  auraDebug: {
+    ...DEFAULT_CONFIG.auraDebug,
+    ...(local?.DEV_CONFIG?.auraDebug ?? {}),
   },
   godMode: {
     ...DEFAULT_CONFIG.godMode,

@@ -64,14 +64,9 @@
   type="button"
   onclick={handleClick}
   onpointerdown={handlePointerDown}
+  aria-expanded={isActive}
 >
-  <canvas class="spell-scroll-sprite" width="36" height="36" use:spriteCanvas={sprite ?? null}></canvas>
-  <div class="spell-scroll-card__content">
-    <h4>{spellScroll.name}</h4>
-    <span class="spell-scroll-card__cost">({spellScroll.cost}g)</span>
-    <div class="spell-scroll-card__details">
-      <div class="spell-scroll-card__types">{spellScroll.types.join(" • ")}</div>
-      <p>{spellScroll.description}</p>
-    </div>
+  <div class="spell-scroll-card__tile">
+    <canvas class="spell-scroll-sprite" width="40" height="40" use:spriteCanvas={sprite ?? null}></canvas>
   </div>
 </button>

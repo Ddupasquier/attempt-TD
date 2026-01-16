@@ -1,4 +1,5 @@
 import type { Foe, FoeType, PixelSprite, Projectile, Defense, SpellScroll } from "../core/types";
+import type { UiSprite } from "../ui/uiSpriteTypes";
 
 type DragPreview = {
   x: number;
@@ -51,8 +52,8 @@ type FrameData = {
 type RendererOptions = {
   canvas: HTMLCanvasElement;
   pathTiles: Set<string>;
-  defenseSprites: Record<string, PixelSprite>;
-  spellScrollSprites: Record<string, PixelSprite>;
+  defenseSprites: Record<string, UiSprite>;
+  spellScrollSprites: Record<string, UiSprite>;
   foeSprites: Record<string, Record<FoeType, PixelSprite>>;
 };
 

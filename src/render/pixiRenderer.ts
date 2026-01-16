@@ -8,6 +8,11 @@ import { getDevConfig, isDevEnabled } from "../core/devFlags";
 import type { Foe, PixelSprite, Projectile, Defense } from "../types/core/types";
 import { DEFENSE_IDS } from "../constants/defenseIds";
 import type { FrameData, RendererOptions } from "../types/render/pixiRendererTypes";
+import type { UiSprite } from "../types/ui/uiSpriteTypes";
+import arcaneBoltImage from "../assets/projectiles/arcaneBolt/arcane-bolt-1.png?url";
+import treeOne from "../assets/environment/trees/tree-1.png?url";
+import treeTwo from "../assets/environment/trees/tree-2.png?url";
+import bushOne from "../assets/environment/bushes/bushes-1.png?url";
 
 // Small helper to make "random" map noise that is the same every time.
 const hash = (col: number, row: number, salt: number) => {
@@ -65,6 +70,17 @@ const loadAnimationTextures = async (modules: Record<string, string>) => {
   await PIXI.Assets.load(urls);
   return urls.map((url) => PIXI.Texture.from(url));
 };
+
+const isImageSprite = (sprite: UiSprite): sprite is { imageSrc: string } => "imageSrc" in sprite;
+
+const getImageSpriteUrls = (sprites: Record<string, UiSprite>) =>
+  Object.values(sprites)
+    .filter(isImageSprite)
+    .map((sprite) => sprite.imageSrc);
+
+const TILE_SPRITE_SCALE = 0.9;
+const ARCANE_BOLT_DIAGONAL_SCALE = 0.8;
+const DEFENSE_ANIMATION_SPEED = 0.12;
 
 // Find the smallest box that wraps the visible pixels.
 const getSpriteBounds = (sprite: PixelSprite) => {
@@ -219,29 +235,7 @@ const buildTerrainGraphics = (
       }
 
       const feature = getTerrainFeatureAtTile(col, row, pathTiles);
-      if (feature.type === "tree") {
-        if (feature.variant === 0) {
-          fillRect(graphics, 0x324a28, tileX + pixel * 4, tileY + pixel * 7, pixel * 3, pixel * 3);
-          fillRect(graphics, 0x3f5f32, tileX + pixel * 2, tileY + pixel * 3, pixel * 7, pixel * 5);
-          fillRect(graphics, 0x4f6f3a, tileX + pixel * 3, tileY + pixel * 2, pixel * 5, pixel * 2);
-          fillRect(graphics, 0x3b2b1b, tileX + pixel * 5, tileY + pixel * 9, pixel * 2, pixel * 3);
-        } else if (feature.variant === 1) {
-          fillRect(graphics, 0x2e4f2b, tileX + pixel * 5, tileY + pixel * 7, pixel * 2, pixel * 3);
-          fillRect(graphics, 0x3b5d35, tileX + pixel * 3, tileY + pixel * 3, pixel * 6, pixel * 5);
-          fillRect(graphics, 0x4f6f3a, tileX + pixel * 4, tileY + pixel * 1, pixel * 4, pixel * 2);
-          fillRect(graphics, 0x3b2b1b, tileX + pixel * 5, tileY + pixel * 9, pixel * 2, pixel * 2);
-        } else if (feature.variant === 2) {
-          fillRect(graphics, 0x2f4f2c, tileX + pixel * 4, tileY + pixel * 6, pixel * 4, pixel * 4);
-          fillRect(graphics, 0x3f5f32, tileX + pixel * 2, tileY + pixel * 3, pixel * 8, pixel * 4);
-          fillRect(graphics, 0x4f6f3a, tileX + pixel * 3, tileY + pixel * 2, pixel * 6, pixel * 2);
-          fillRect(graphics, 0x3b2b1b, tileX + pixel * 5, tileY + pixel * 9, pixel * 2, pixel * 3);
-        } else {
-          fillRect(graphics, 0x2c4829, tileX + pixel * 5, tileY + pixel * 6, pixel * 2, pixel * 4);
-          fillRect(graphics, 0x3f5a32, tileX + pixel * 2, tileY + pixel * 4, pixel * 8, pixel * 4);
-          fillRect(graphics, 0x4f6f3a, tileX + pixel * 3, tileY + pixel * 2, pixel * 6, pixel * 2);
-          fillRect(graphics, 0x3b2b1b, tileX + pixel * 5, tileY + pixel * 9, pixel * 2, pixel * 2);
-        }
-      } else if (feature.type === "stump") {
+      if (feature.type === "stump") {
         fillRect(graphics, 0xb58a55, tileX + pixel * 4, tileY + pixel * 7, pixel * 4, pixel * 3);
         fillRect(graphics, 0x906d44, tileX + pixel * 5, tileY + pixel * 8, pixel * 2, pixel);
       } else if (feature.type === "rock") {
@@ -329,6 +323,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
 
   // Layers are stacked like paper. Back first, front last.
   const terrainLayer = new PIXI.Graphics();
+  const environmentLayer = new PIXI.Container();
   const gridLayer = new PIXI.Graphics();
   const defensesLayer = new PIXI.Container();
   const starsLayer = new PIXI.Container();
@@ -342,6 +337,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
   // Add all layers in order.
   app.stage.addChild(
     terrainLayer,
+    environmentLayer,
     gridLayer,
     defensesLayer,
     starsLayer,
@@ -357,30 +353,76 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const defenseTextures = new Map<string, PIXI.Texture>();
   const spellScrollTextures = new Map<string, PIXI.Texture>();
   const foeTextures = new Map<string, PIXI.Texture>();
+  await PIXI.Assets.load([
+    arcaneBoltImage,
+    treeOne,
+    treeTwo,
+    bushOne,
+    ...getImageSpriteUrls(options.defenseSprites),
+    ...getImageSpriteUrls(options.spellScrollSprites),
+  ]);
+  const getTextureFromImageSprite = async (imageSrc: string) => {
+    const cached = PIXI.Assets.get(imageSrc) as PIXI.Texture | undefined;
+    if (cached) return cached;
+    const loaded = await PIXI.Assets.load(imageSrc);
+    return loaded as PIXI.Texture;
+  };
   const wizardFrames = await loadAnimationTextures(
-    import.meta.glob("/src/assets/animations/wizard_idle/*.png", {
+    import.meta.glob("/src/assets/defenses/wizard/idle/*.png", {
       eager: true,
       query: "?url",
       import: "default",
     }),
   );
-  Object.entries(options.defenseSprites).forEach(([key, sprite]) => {
-    defenseTextures.set(key, createPaddedSpriteTexture(sprite, 1));
-  });
+  const paladinFrames = await loadAnimationTextures(
+    import.meta.glob("/src/assets/defenses/paladin/idle/*.png", {
+      eager: true,
+      query: "?url",
+      import: "default",
+    }),
+  );
+  for (const [key, sprite] of Object.entries(options.defenseSprites)) {
+    if (isImageSprite(sprite)) {
+      const texture = await getTextureFromImageSprite(sprite.imageSrc);
+      defenseTextures.set(key, texture);
+    } else {
+      defenseTextures.set(key, createPaddedSpriteTexture(sprite, 1));
+    }
+  }
   const wizardStaticFrame = wizardFrames[0];
   const hasWizardAnimation = wizardFrames.length > 1;
   if (wizardStaticFrame) {
     defenseTextures.set(DEFENSE_IDS.wizard, wizardStaticFrame);
   }
-  Object.entries(options.spellScrollSprites).forEach(([key, sprite]) => {
-    spellScrollTextures.set(key, createPaddedSpriteTexture(sprite, 1));
-  });
+  const paladinStaticFrame = paladinFrames[0];
+  const hasPaladinAnimation = paladinFrames.length > 1;
+  if (paladinStaticFrame) {
+    defenseTextures.set(DEFENSE_IDS.paladin, paladinStaticFrame);
+  }
+  for (const [key, sprite] of Object.entries(options.spellScrollSprites)) {
+    if (isImageSprite(sprite)) {
+      const texture = await getTextureFromImageSprite(sprite.imageSrc);
+      spellScrollTextures.set(key, texture);
+    } else {
+      spellScrollTextures.set(key, createPaddedSpriteTexture(sprite, 1));
+    }
+  }
   Object.entries(options.foeSprites).forEach(([factionId, sprites]) => {
     Object.entries(sprites).forEach(([type, sprite]) => {
       foeTextures.set(`${factionId}:${type}`, createSpriteTexture(sprite));
     });
   });
   const rockTexture = createRockTexture();
+  const arcaneBoltTexture = PIXI.Texture.from(arcaneBoltImage);
+  if (arcaneBoltTexture.source) {
+    arcaneBoltTexture.source.scaleMode = "nearest";
+  }
+  const treeTextures = [PIXI.Texture.from(treeOne), PIXI.Texture.from(treeTwo)];
+  const bushTexture = PIXI.Texture.from(bushOne);
+  treeTextures.forEach((texture) => {
+    if (texture.source) texture.source.scaleMode = "nearest";
+  });
+  if (bushTexture.source) bushTexture.source.scaleMode = "nearest";
 
   // Keep sprites in maps so we can update them by id.
   const defenseSpritesById = new Map<string, PIXI.Sprite>();
@@ -402,6 +444,39 @@ const createPixiRenderer = async (options: RendererOptions) => {
   const resizeToCanvas = () => {
     const rect = options.canvas.getBoundingClientRect();
     app.renderer.resize(rect.width, rect.height);
+  };
+
+  const buildEnvironmentSprites = (
+    container: PIXI.Container,
+    size: number,
+    cols: number,
+    rows: number,
+    pathTiles: Set<string>,
+  ) => {
+    container.removeChildren();
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const feature = getTerrainFeatureAtTile(col, row, pathTiles);
+        if (feature.type !== "tree" && feature.type !== "bush") continue;
+        const texture =
+          feature.type === "tree"
+            ? treeTextures[feature.variant % treeTextures.length]
+            : bushTexture;
+        const sprite = new PIXI.Sprite(texture);
+        sprite.anchor.set(0.5, 0.95);
+        const center = tileCenter(col, row, size);
+        const jitterX = (hash(col, row, 12) % 5) - 2;
+        const jitterY = (hash(col, row, 13) % 3) - 1;
+        sprite.position.set(
+          center.x + jitterX * size * 0.04,
+          center.y + size * 0.5 + jitterY * size * 0.02,
+        );
+        const baseScale = feature.type === "tree" ? 1.05 : 0.82;
+        const scale = (size * baseScale) / (texture.width || 1);
+        sprite.scale.set(scale);
+        container.addChild(sprite);
+      }
+    }
   };
 
   // Draw a star icon for upgrades.
@@ -462,7 +537,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
         // Make a new sprite if we don't have one yet.
         if (defense.type.id === DEFENSE_IDS.wizard && hasWizardAnimation) {
           const animated = new PIXI.AnimatedSprite(wizardFrames);
-          animated.animationSpeed = 0.05;
+          animated.animationSpeed = DEFENSE_ANIMATION_SPEED;
           animated.play();
           sprite = animated;
         } else if (defense.type.id === DEFENSE_IDS.wizard && wizardStaticFrame) {
@@ -486,7 +561,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
           } else {
             defensesLayer.removeChild(sprite);
             const animated = new PIXI.AnimatedSprite(wizardFrames);
-            animated.animationSpeed = 0.12;
+            animated.animationSpeed = DEFENSE_ANIMATION_SPEED;
             animated.play();
             animated.anchor.set(0.5);
             animated.roundPixels = true;
@@ -505,13 +580,42 @@ const createPixiRenderer = async (options: RendererOptions) => {
         } else if (sprite.texture !== wizardStaticFrame) {
           sprite.texture = wizardStaticFrame;
         }
+      } else if (defense.type.id === DEFENSE_IDS.paladin && paladinStaticFrame) {
+        if (hasPaladinAnimation) {
+          if (sprite instanceof PIXI.AnimatedSprite) {
+            if (sprite.textures !== paladinFrames) {
+              sprite.textures = paladinFrames;
+              sprite.play();
+            }
+          } else {
+            defensesLayer.removeChild(sprite);
+            const animated = new PIXI.AnimatedSprite(paladinFrames);
+            animated.animationSpeed = DEFENSE_ANIMATION_SPEED;
+            animated.play();
+            animated.anchor.set(0.5);
+            animated.roundPixels = true;
+            defensesLayer.addChild(animated);
+            defenseSpritesById.set(defense.id, animated);
+            sprite = animated;
+          }
+        } else if (!(sprite instanceof PIXI.Sprite)) {
+          defensesLayer.removeChild(sprite);
+          const staticSprite = new PIXI.Sprite(paladinStaticFrame);
+          staticSprite.anchor.set(0.5);
+          staticSprite.roundPixels = true;
+          defensesLayer.addChild(staticSprite);
+          defenseSpritesById.set(defense.id, staticSprite);
+          sprite = staticSprite;
+        } else if (sprite.texture !== paladinStaticFrame) {
+          sprite.texture = paladinStaticFrame;
+        }
       }
       // Center on the tile.
       const center = tileCenter(defense.col, defense.row, size);
       const textureWidth = sprite.texture.width || 1;
       const textureHeight = sprite.texture.height || 1;
       // Scale so the sprite fits inside the tile on both axes.
-      const scale = size / Math.max(textureWidth, textureHeight);
+      const scale = (size / Math.max(textureWidth, textureHeight)) * TILE_SPRITE_SCALE;
       const facing = defense.facing ?? 1;
       sprite.scale.set(scale * facing, scale);
       sprite.position.set(center.x, center.y);
@@ -571,7 +675,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
       const center = tileCenter(spellScroll.col, spellScroll.row, size);
       const textureWidth = sprite.texture.width || 1;
       // Scale so it fits the tile.
-      const scale = size / textureWidth;
+      const scale = (size / textureWidth) * TILE_SPRITE_SCALE;
       sprite.scale.set(scale);
       sprite.position.set(center.x, center.y);
     }
@@ -646,6 +750,25 @@ const createPixiRenderer = async (options: RendererOptions) => {
       const sprite = projectilePool[index];
       sprite.visible = true;
       const isSiege = bolt.defenseTypeId === DEFENSE_IDS.siegeEngine;
+      const isWizard = bolt.defenseTypeId === DEFENSE_IDS.wizard;
+      sprite.anchor.set(0);
+      sprite.rotation = 0;
+      if (isWizard) {
+        sprite.texture = arcaneBoltTexture;
+        sprite.tint = 0xffffff;
+        const targetX = bolt.target?.x ?? bolt.targetX ?? bolt.x;
+        const targetY = bolt.target?.y ?? bolt.targetY ?? bolt.y;
+        const dx = targetX - bolt.x;
+        const dy = targetY - bolt.y;
+        const angleToTarget = Math.atan2(dy, dx);
+        const baseAngle = Math.atan2(arcaneBoltTexture.height || 1, arcaneBoltTexture.width || 1);
+        const diagonal = Math.hypot(arcaneBoltTexture.width || 1, arcaneBoltTexture.height || 1);
+        const scale = (size * ARCANE_BOLT_DIAGONAL_SCALE) / (diagonal || 1);
+        sprite.rotation = angleToTarget - baseAngle;
+        sprite.scale.set(scale);
+        sprite.position.set(bolt.x, bolt.y);
+        return;
+      }
       sprite.texture = isSiege ? rockTexture : PIXI.Texture.WHITE;
       sprite.tint = isSiege ? 0xffffff : hexToNumber(bolt.color);
       let sizePx = 3;
@@ -816,6 +939,7 @@ const createPixiRenderer = async (options: RendererOptions) => {
   // Rebuild the map background when size changes.
   const rebuildTerrain = (size: number, cols: number, rows: number) => {
     buildTerrainGraphics(terrainLayer, size, cols, rows, options.pathTiles);
+    buildEnvironmentSprites(environmentLayer, size, cols, rows, options.pathTiles);
     buildGridGraphics(gridLayer, size, cols, rows);
   };
 

@@ -1,5 +1,6 @@
 type TerrainFeature =
   | { type: "tree"; variant: number }
+  | { type: "bush"; variant: number }
   | { type: "stump" }
   | { type: "rock"; variant: number }
   | { type: "flower" }

@@ -1,8 +1,9 @@
-import type { PixelSprite, DefenseType } from "../../core/types";
+import type { DefenseType } from "../../core/types";
+import type { UiSprite } from "../uiSpriteTypes";
 
 type DefenseCardProps = {
   defense: DefenseType;
-  sprite: PixelSprite | undefined;
+  sprite: UiSprite | undefined;
   isActive: boolean;
   canAfford: boolean;
   cost: number;

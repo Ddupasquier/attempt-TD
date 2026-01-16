@@ -1,5 +1,5 @@
 import { DEFENSE_IDS } from "../../constants/defenseIds";
-import type { PixelSprite } from "../../types/core/types";
+import type { UiSprite } from "../../types/ui/uiSpriteTypes";
 import { barbarianSprite } from "./defenses/barbarian";
 import { bardSprite } from "./defenses/bard";
 import { clericSprite } from "./defenses/cleric";
@@ -15,7 +15,7 @@ import { warlockSprite } from "./defenses/warlock";
 import { siegeEngineSprite } from "./defenses/siegeEngine";
 import { militiaSprite } from "./defenses/militia";
 
-const defenseSprites: Record<string, PixelSprite> = {
+const defenseSprites: Record<string, UiSprite> = {
   [DEFENSE_IDS.barbarian]: barbarianSprite,
   [DEFENSE_IDS.bard]: bardSprite,
   [DEFENSE_IDS.cleric]: clericSprite,

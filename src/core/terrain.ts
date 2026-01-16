@@ -13,16 +13,19 @@ const getTerrainFeatureAtTile = (col: number, row: number, pathTiles: Set<string
     return { type: "none" };
   }
   const featureRoll = hash(col, row, 2) % 100;
-  if (featureRoll < 8) {
+  if (featureRoll < 6) {
     return { type: "tree", variant: hash(col, row, 8) % 4 };
   }
-  if (featureRoll < 14) {
-    return { type: "stump" };
+  if (featureRoll < 12) {
+    return { type: "bush", variant: hash(col, row, 11) % 3 };
   }
-  if (featureRoll < 22) {
+  if (featureRoll < 16) {
     return { type: "rock", variant: hash(col, row, 9) % 4 };
   }
-  if (featureRoll < 32) {
+  if (featureRoll < 20) {
+    return { type: "stump" };
+  }
+  if (featureRoll < 28) {
     return { type: "flower" };
   }
   return { type: "none" };

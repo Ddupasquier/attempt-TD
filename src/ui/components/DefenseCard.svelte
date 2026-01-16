@@ -58,14 +58,9 @@
   disabled={!canAfford}
   onclick={handleClick}
   onpointerdown={handlePointerDown}
+  aria-expanded={isActive}
 >
-  <canvas class="defense-sprite" width="36" height="36" use:spriteCanvas={sprite ?? null}></canvas>
-  <div class="defense-card__content">
-    <h4>{defense.name}</h4>
-    <span class="defense-card__cost">({cost}g)</span>
-    <div class="defense-card__details">
-      <div class="defense-card__types">{defense.types.join(" • ")}</div>
-      <p>{defense.description}</p>
-    </div>
+  <div class="defense-card__tile">
+    <canvas class="defense-sprite" width="40" height="40" use:spriteCanvas={sprite ?? null}></canvas>
   </div>
 </button>

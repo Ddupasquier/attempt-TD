@@ -41,6 +41,15 @@
   const handleSelectSpellScroll = (spellScrollId: string | null) => {
     selectedSpellScrollTypeId = spellScrollId;
   };
+
+  const selectedDefense = $derived(
+    selectedDefenseTypeId ? defenseTypes.find((defense) => defense.id === selectedDefenseTypeId) : null,
+  );
+  const selectedSpellScroll = $derived(
+    selectedSpellScrollTypeId
+      ? spellScrollTypes.find((scroll) => scroll.id === selectedSpellScrollTypeId)
+      : null,
+  );
 </script>
 
 <div class="hud-overlay">
@@ -53,6 +62,18 @@
     <div class="hud-section">
       <div class="label">{UI_TEXT.towerLabel}</div>
       <div class="defense-hint">{UI_TEXT.hintTowerSelect}</div>
+      {#if selectedDefense}
+        <div class="hud-selection-panel">
+          <div class="hud-selection-panel__content">
+            <div class="hud-selection-panel__title-row">
+              <div class="hud-selection-panel__name">{selectedDefense.name}</div>
+              <div class="hud-selection-panel__cost">({getDefenseCost(selectedDefense.id, selectedDefense.cost)}g)</div>
+            </div>
+            <div class="hud-selection-panel__types">{selectedDefense.types.join(" • ")}</div>
+            <p class="hud-selection-panel__desc">{selectedDefense.description}</p>
+          </div>
+        </div>
+      {/if}
       <div class="defense-list">
         {#each sortedDefenses as defense (defense.id)}
           <DefenseCard
@@ -70,6 +91,18 @@
     <div class="hud-section">
       <div class="label">{UI_TEXT.trapLabel}</div>
       <div class="spell-scroll-hint">{UI_TEXT.hintTrapDrag}</div>
+      {#if selectedSpellScroll}
+        <div class="hud-selection-panel">
+          <div class="hud-selection-panel__content">
+            <div class="hud-selection-panel__title-row">
+              <div class="hud-selection-panel__name">{selectedSpellScroll.name}</div>
+              <div class="hud-selection-panel__cost">({selectedSpellScroll.cost}g)</div>
+            </div>
+            <div class="hud-selection-panel__types">{selectedSpellScroll.types.join(" • ")}</div>
+            <p class="hud-selection-panel__desc">{selectedSpellScroll.description}</p>
+          </div>
+        </div>
+      {/if}
       <div class="spell-scroll-list">
         {#each sortedSpellScrolls as spellScroll (spellScroll.id)}
           <SpellScrollCard

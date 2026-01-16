@@ -328,7 +328,7 @@ const resetPerWaveSpellScrollCooldowns = () => {
   const uiState = createUiState({
     selectedDefenseTypeId: gameState.selectedDefense?.id ?? null,
     selectedDefensePopup: null,
-    gold: gameState.gold,
+    gold: isDevEnabled() && getDevConfig().infiniteGold ? 9999 : gameState.gold,
     hp: gameState.hp,
     wave: gameState.wave,
     foeFactionName: getFactionForWave(gameState.wave).name,
@@ -359,39 +359,54 @@ const buildSelectedDefensePopup = () => {
   const upgradeCost = canUpgrade ? getDefenseUpgradeCost(defense, nextLevel) : 0;
   const canAffordUpgrade = canUpgrade && canAfford(upgradeCost);
   const aura = getDefenseAuraMultipliers(defense, gameState.defenses);
-  const statsCurrent = applyAuraToStats(getDefenseStatsAtLevel(defense, defense.level), aura);
+  const baseCurrent = getDefenseStatsAtLevel(defense, defense.level);
+  const baseCurrentRaw = getDefenseStatsAtLevel(
+    { ...defense, rangeBonus: 0, damageBonus: 0 },
+    defense.level,
+  );
+  const statsCurrent = applyAuraToStats(baseCurrent, aura);
   const statsNext = canUpgrade
     ? applyAuraToStats(getDefenseStatsAtLevel(defense, nextLevel), aura)
     : null;
-  const benefits: string[] = [];
-  if (statsNext) {
-    if (statsNext.damage !== statsCurrent.damage) {
-      benefits.push(
-        `Buff — Damage: ${statsCurrent.damage.toFixed(2)} → ${statsNext.damage.toFixed(2)}`,
-      );
-    }
-    if (statsNext.range !== statsCurrent.range) {
-      benefits.push(
-        `Buff — Range: ${statsCurrent.range.toFixed(2)} → ${statsNext.range.toFixed(2)}`,
-      );
-    }
-    if (statsNext.rate !== statsCurrent.rate) {
-      benefits.push(
-        `Buff — Rate: ${statsCurrent.rate.toFixed(2)} → ${statsNext.rate.toFixed(2)}`,
-      );
-    }
-    if (statsNext.knockback !== statsCurrent.knockback) {
-      benefits.push(
-        `Buff — Knockback: ${statsCurrent.knockback.toFixed(2)} → ${statsNext.knockback.toFixed(2)}`,
-      );
-    }
-    const slowConfig = defense.type.onHitSlow;
-    if (slowConfig && defense.level < slowConfig.minLevel && nextLevel >= slowConfig.minLevel) {
-      const slowPercent = Math.round((1 - slowConfig.multiplier) * 100);
-      benefits.push(`Buff — Unlocks on-hit slow: ${slowPercent}% for ${slowConfig.duration}s`);
-    }
-  }
-
+  const baseNext = canUpgrade ? getDefenseStatsAtLevel(defense, nextLevel) : null;
+  const auraDebug = isDevEnabled() && getDevConfig().auraDebug.enabled
+    ? {
+        sources: gameState.defenses.map((source) => {
+          const auraBonuses = source.type.auraBonuses;
+          const range = getDefenseStatsAtLevel(source, source.level).range;
+          const distance = Math.hypot(defense.col - source.col, defense.row - source.row);
+          let applies = true;
+          let reason = "applies";
+          if (!auraBonuses) {
+            applies = false;
+            reason = "no-aura";
+          } else if (source.id === defense.id || source === defense) {
+            applies = false;
+            reason = "same-defense";
+          } else if (source.col === defense.col && source.row === defense.row) {
+            applies = false;
+            reason = "same-tile";
+          } else if (source.type.id === defense.type.id) {
+            applies = false;
+            reason = "same-type";
+          } else if (distance > range + 1e-6) {
+            applies = false;
+            reason = "out-of-range";
+          }
+          return {
+            id: source.id,
+            typeId: source.type.id,
+            name: source.type.name,
+            col: source.col,
+            row: source.row,
+            range,
+            distance,
+            applies,
+            reason,
+          };
+        }),
+      }
+    : undefined;
   let x = center.x + size * 0.55;
   if (x + UPGRADE_POPUP_WIDTH > mapWidth - UPGRADE_POPUP_PADDING) {
     x = center.x - size * 0.55 - UPGRADE_POPUP_WIDTH;
@@ -420,6 +435,18 @@ const buildSelectedDefensePopup = () => {
       rate: statsCurrent.rate,
       knockback: statsCurrent.knockback,
     },
+    statsBase: {
+      damage: baseCurrent.damage,
+      range: baseCurrent.range,
+      rate: baseCurrent.rate,
+      knockback: baseCurrent.knockback,
+    },
+    statsBaseRaw: {
+      damage: baseCurrentRaw.damage,
+      range: baseCurrentRaw.range,
+      rate: baseCurrentRaw.rate,
+      knockback: baseCurrentRaw.knockback,
+    },
     statsNext: statsNext
       ? {
           damage: statsNext.damage,
@@ -428,7 +455,15 @@ const buildSelectedDefensePopup = () => {
           knockback: statsNext.knockback,
         }
       : null,
-    benefits,
+    statsNextBase: baseNext
+      ? {
+          damage: baseNext.damage,
+          range: baseNext.range,
+          rate: baseNext.rate,
+          knockback: baseNext.knockback,
+        }
+      : null,
+    auraDebug,
   };
 };
 
@@ -437,7 +472,7 @@ const buildSelectedDefensePopup = () => {
     uiState.set({
       selectedDefenseTypeId: gameState.selectedDefense?.id ?? null,
       selectedDefensePopup: buildSelectedDefensePopup(),
-      gold: gameState.gold,
+      gold: isDevEnabled() && getDevConfig().infiniteGold ? 9999 : gameState.gold,
       hp: gameState.hp,
       wave: gameState.wave,
       foeFactionName: getFactionForWave(gameState.wave).name,

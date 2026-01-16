@@ -1,13 +1,14 @@
 import type { PixelSprite, DefenseType, SpellScrollType } from "../core/types";
+import type { UiSprite } from "./uiSpriteTypes";
 import type { UiState } from "./uiStateTypes";
 import type { Writable } from "svelte/store";
 
 type UiRootProps = {
   uiState: Writable<UiState>;
   defenseTypes: DefenseType[];
-  defenseSprites: Record<string, PixelSprite>;
+  defenseSprites: Record<string, UiSprite>;
   spellScrollTypes: SpellScrollType[];
-  spellScrollSprites: Record<string, PixelSprite>;
+  spellScrollSprites: Record<string, UiSprite>;
   onStartWave: () => void;
   onResetGame: () => void;
   onToggleSound: () => void;

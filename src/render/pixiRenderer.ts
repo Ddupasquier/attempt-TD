@@ -80,7 +80,7 @@ const getImageSpriteUrls = (sprites: Record<string, UiSprite>) =>
 
 const TILE_SPRITE_SCALE = 0.9;
 const ARCANE_BOLT_DIAGONAL_SCALE = 0.8;
-const DEFENSE_ANIMATION_SPEED = 0.12;
+const DEFENSE_ANIMATION_SPEED = 0.05;
 
 // Find the smallest box that wraps the visible pixels.
 const getSpriteBounds = (sprite: PixelSprite) => {

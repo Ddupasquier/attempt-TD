@@ -1,4 +1,4 @@
-import type { PixelSprite, DefenseType, SpellScrollType } from "../core/types";
+import type { DefenseType, SpellScrollType } from "../core/types";
 import type { UiSprite } from "./uiSpriteTypes";
 import type { UiState } from "./uiStateTypes";
 import type { Writable } from "svelte/store";
